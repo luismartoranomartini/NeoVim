@@ -3,12 +3,26 @@
 -- Treesitter, autopairs, nvim-tree, bufferline e emmet
 -- =========================================================
 
--- Reconhece arquivos .tmpl (Go HTML templates) como filetype gohtmltmpl
+-- Reconhece arquivos .tmpl (Go HTML templates).
+-- Tratados como "html" para ativar auto-fechamento de tags,
+-- Emmet e o LSP de HTML sem depender de parser extra.
 vim.filetype.add({
   extension = {
-    tmpl  = "gohtmltmpl",
-    gohtml = "gohtmltmpl",
+    tmpl   = "html",
+    gohtml = "html",
   },
+  pattern = {
+    -- pega nomes compostos como home.page.tmpl, layout.base.tmpl, etc.
+    [".*%.tmpl"] = "html",
+  },
+})
+
+-- Garante o filetype mesmo em casos que escapem das regras acima
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = "*.tmpl",
+  callback = function()
+    vim.bo.filetype = "html"
+  end,
 })
 
 -- Treesitter
@@ -24,7 +38,7 @@ end)
 -- Força o início do Treesitter highlight ao abrir arquivos.
 -- Necessário no 0.12 onde highlight={enable=true} nem sempre dispara sozinho.
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "gohtmltmpl" },
+  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c" },
   callback = function(args)
     pcall(vim.treesitter.start, args.buf)
   end,
@@ -40,7 +54,7 @@ vim.g.user_emmet_mode           = "i"
 vim.g.user_emmet_install_global = 0
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern  = { "html", "css", "scss", "jsx", "tsx", "gohtmltmpl" },
+  pattern  = { "html", "css", "scss", "jsx", "tsx" },
   callback = function() vim.cmd("EmmetInstall") end,
 })
 
