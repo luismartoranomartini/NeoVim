@@ -11,11 +11,13 @@ pcall(function()
     filetype = {
       javascript = "node",
       typescript = "npx tsx",
-      python     = "python",
+      python     = "python3",
       lua        = "lua",
-      html       = "start %",
+      html       = "xdg-open %",
       -- $dir entra na pasta do arquivo e roda todos os .go do pacote
       go         = "cd $dir && go run .",
+      -- compila e executa: gera binário temporário e roda
+      c          = "cd $dir && gcc $fileName -o /tmp/$fileNameWithoutExt && /tmp/$fileNameWithoutExt",
     },
   })
 end)

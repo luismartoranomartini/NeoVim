@@ -5,7 +5,7 @@
 
 pcall(function()
   require("dapui").setup()
-  require("dap-python").setup("python")
+  require("dap-python").setup("python3")
   require("dap-go").setup({
     delve = {
       path = vim.fn.exepath("dlv"),  -- caminho do Delve no Windows

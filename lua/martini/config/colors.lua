@@ -33,15 +33,15 @@ end
 
 -- Colorscheme
 pcall(function()
-  require("ondedark").setup({
-    style = "deep",
+  require("tokyonight").setup({
+    style = "night",
     styles = {
       comments  = { italic = true },
       keywords  = { bold   = false },
       functions = { bold   = false },
     },
   })
-  vim.cmd.colorscheme("onedark")
+  vim.cmd.colorscheme("tokyonight-night")
 end)
 
 -- Aplica imediatamente após carregar o tema

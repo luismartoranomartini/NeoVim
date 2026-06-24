@@ -48,6 +48,7 @@ vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end)
 -- Code runner  (<leader>r reservado — não usar outros <leader>r*)
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })
 vim.keymap.set("n", "<leader>rp", ":RunProject<CR>", { desc = "Executar projeto" })
+<<<<<<< HEAD
 
 -- =========================================================
 -- LSP — ativados apenas quando um servidor está conectado
@@ -74,3 +75,5 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "]d",         vim.diagnostic.goto_next,   vim.tbl_extend("force", opts, { desc = "Próximo diagnóstico" }))
   end,
 })
+=======
+>>>>>>> 789bee1ed595f3e8200a2f9d7294bfbccc7fe7eb

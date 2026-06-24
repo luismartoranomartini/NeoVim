@@ -1,5 +1,5 @@
 -- =========================================================
--- TARGET: Neovim 0.12 · Windows 11 nativo
+-- TARGET: Neovim 0.12 · WSL / Ubuntu
 -- Entrada principal — carrega o patch, os plugins e os módulos
 -- =========================================================
 
