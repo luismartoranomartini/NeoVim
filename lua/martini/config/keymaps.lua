@@ -45,6 +45,32 @@ vim.keymap.set("n", "<F5>",       function() require("dap").continue() end)
 vim.keymap.set("n", "<leader>b",  function() require("dap").toggle_breakpoint() end)
 vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end)
 
--- Code runner
+-- Code runner  (<leader>r reservado — não usar outros <leader>r*)
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })
 vim.keymap.set("n", "<leader>rp", ":RunProject<CR>", { desc = "Executar projeto" })
+
+-- =========================================================
+-- LSP — ativados apenas quando um servidor está conectado
+-- Prefixo <leader>l para não colidir com <leader>r (runner)
+-- =========================================================
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(ev)
+    local opts = { buffer = ev.buf }
+
+    -- Navegação
+    vim.keymap.set("n", "gd",         vim.lsp.buf.definition,      vim.tbl_extend("force", opts, { desc = "Ir para definição" }))
+    vim.keymap.set("n", "gD",         vim.lsp.buf.declaration,     vim.tbl_extend("force", opts, { desc = "Ir para declaração" }))
+    vim.keymap.set("n", "gr",         vim.lsp.buf.references,      vim.tbl_extend("force", opts, { desc = "Listar referências" }))
+    vim.keymap.set("n", "gi",         vim.lsp.buf.implementation,  vim.tbl_extend("force", opts, { desc = "Ir para implementação" }))
+    vim.keymap.set("n", "K",          vim.lsp.buf.hover,           vim.tbl_extend("force", opts, { desc = "Documentação (hover)" }))
+
+    -- Refactoring
+    vim.keymap.set("n",        "<leader>lr", vim.lsp.buf.rename,        vim.tbl_extend("force", opts, { desc = "LSP: Renomear símbolo" }))
+    vim.keymap.set({ "n","v" },"<leader>la", vim.lsp.buf.code_action,   vim.tbl_extend("force", opts, { desc = "LSP: Code action" }))
+
+    -- Diagnósticos
+    vim.keymap.set("n", "<leader>ld", vim.diagnostic.open_float,  vim.tbl_extend("force", opts, { desc = "LSP: Diagnóstico inline" }))
+    vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev,   vim.tbl_extend("force", opts, { desc = "Diagnóstico anterior" }))
+    vim.keymap.set("n", "]d",         vim.diagnostic.goto_next,   vim.tbl_extend("force", opts, { desc = "Próximo diagnóstico" }))
+  end,
+})
