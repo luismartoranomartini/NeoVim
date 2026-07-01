@@ -1,60 +1,120 @@
 -- =========================================================
 -- lua/martini/config/colors.lua
--- Colorscheme, highlights de sintaxe e semantic tokens
+-- Fundo preto · paleta forte com muitas categorias distintas
 -- =========================================================
 
--- Função central de highlights — chamada após qualquer troca de tema
 local function aplicar_highlights()
   local hl = vim.api.nvim_set_hl
 
-  -- LSP semantic tokens (gopls)
-  hl(0, "@lsp.type.namespace",    { fg = "#7aa2f7" })
-  hl(0, "@lsp.type.namespace.go", { fg = "#7aa2f7" })
-  hl(0, "@lsp.type.function",     { fg = "#7dcfff" })
-  hl(0, "@lsp.type.function.go",  { fg = "#7dcfff" })
-  hl(0, "@lsp.type.method",       { fg = "#7dcfff" })
-  hl(0, "@lsp.type.method.go",    { fg = "#7dcfff" })
-  hl(0, "@lsp.type.type",         { fg = "#e0af68" })
-  hl(0, "@lsp.type.type.go",      { fg = "#e0af68" })
-  hl(0, "@lsp.type.parameter",    { fg = "#ff9e64" })
-  hl(0, "@lsp.type.parameter.go", { fg = "#ff9e64" })
-  hl(0, "@lsp.type.variable",     { fg = "#c0caf5" })
-  hl(0, "@lsp.type.variable.go",  { fg = "#c0caf5" })
+  -- Paleta de cores fortes e saturadas
+  local cor = {
+    azul     = "#4fc1ff",  -- funções, métodos
+    ciano    = "#00e5ff",  -- pacotes / namespaces
+    amarelo  = "#ffd700",  -- tipos e structs
+    vermelho = "#ff3b5c",  -- keywords (func, return, if, for)
+    verde    = "#39ff14",  -- strings
+    laranja  = "#ff8c00",  -- números e constantes
+    rosa     = "#ff4fd8",  -- operadores
+    roxo     = "#bd93f9",  -- booleanos, nil, builtins
+    cinza    = "#7a8290",  -- comentários
+    branco   = "#ffffff",  -- variáveis e texto
+  }
 
-  -- Treesitter (funciona sem LSP)
-  hl(0, "@function.call",  { fg = "#7dcfff" })
-  hl(0, "@method.call",    { fg = "#7dcfff" })
-  hl(0, "@namespace",      { fg = "#7aa2f7" })
-  hl(0, "@type",           { fg = "#e0af68" })
-  hl(0, "@type.builtin",   { fg = "#e0af68" })
-  hl(0, "@variable",       { fg = "#c0caf5" })
-  hl(0, "@parameter",      { fg = "#ff9e64" })
+  -- Funções e métodos → AZUL
+  hl(0, "@lsp.type.function",     { fg = cor.azul })
+  hl(0, "@lsp.type.function.go",  { fg = cor.azul })
+  hl(0, "@lsp.type.method",       { fg = cor.azul })
+  hl(0, "@lsp.type.method.go",    { fg = cor.azul })
+  hl(0, "@function.call",   { fg = cor.azul })
+  hl(0, "@method.call",     { fg = cor.azul })
+  hl(0, "@function",        { fg = cor.azul })
+  hl(0, "@function.method", { fg = cor.azul })
+
+  -- Pacotes / namespaces → CIANO
+  hl(0, "@lsp.type.namespace",    { fg = cor.ciano })
+  hl(0, "@lsp.type.namespace.go", { fg = cor.ciano })
+  hl(0, "@namespace",  { fg = cor.ciano })
+  hl(0, "@module",     { fg = cor.ciano })
+
+  -- Tipos e structs → AMARELO
+  hl(0, "@lsp.type.type",    { fg = cor.amarelo })
+  hl(0, "@lsp.type.type.go", { fg = cor.amarelo })
+  hl(0, "@type",            { fg = cor.amarelo })
+  hl(0, "@type.builtin",    { fg = cor.amarelo })
+  hl(0, "@type.definition", { fg = cor.amarelo })
+  hl(0, "Type",             { fg = cor.amarelo })
+
+  -- Keywords → VERMELHO
+  hl(0, "@keyword",          { fg = cor.vermelho })
+  hl(0, "@keyword.function", { fg = cor.vermelho })
+  hl(0, "@keyword.return",   { fg = cor.vermelho })
+  hl(0, "@keyword.import",   { fg = cor.vermelho })
+  hl(0, "@conditional",      { fg = cor.vermelho })
+  hl(0, "@repeat",           { fg = cor.vermelho })
+  hl(0, "Keyword",           { fg = cor.vermelho })
+  hl(0, "Statement",         { fg = cor.vermelho })
+
+  -- Strings → VERDE
+  hl(0, "@string",         { fg = cor.verde })
+  hl(0, "@string.escape",  { fg = cor.verde })
+  hl(0, "String",          { fg = cor.verde })
+
+  -- Números e constantes → LARANJA
+  hl(0, "@number",   { fg = cor.laranja })
+  hl(0, "@float",    { fg = cor.laranja })
+  hl(0, "@constant", { fg = cor.laranja })
+  hl(0, "Number",    { fg = cor.laranja })
+  hl(0, "Constant",  { fg = cor.laranja })
+
+  -- Operadores → ROSA
+  hl(0, "@operator", { fg = cor.rosa })
+  hl(0, "Operator",  { fg = cor.rosa })
+
+  -- Booleanos, nil, builtins → ROXO
+  hl(0, "@boolean",          { fg = cor.roxo })
+  hl(0, "@constant.builtin", { fg = cor.roxo })
+  hl(0, "@function.builtin", { fg = cor.roxo })
+  hl(0, "Boolean",           { fg = cor.roxo })
+
+  -- Comentários → CINZA (itálico)
+  hl(0, "@comment", { fg = cor.cinza, italic = true })
+  hl(0, "Comment",  { fg = cor.cinza, italic = true })
+
+  -- Variáveis e parâmetros → BRANCO
+  hl(0, "@lsp.type.variable",     { fg = cor.branco })
+  hl(0, "@lsp.type.variable.go",  { fg = cor.branco })
+  hl(0, "@lsp.type.parameter",    { fg = cor.branco })
+  hl(0, "@lsp.type.parameter.go", { fg = cor.branco })
+  hl(0, "@variable",        { fg = cor.branco })
+  hl(0, "@variable.member", { fg = cor.branco })
+  hl(0, "@parameter",       { fg = cor.branco })
+  hl(0, "Identifier",       { fg = cor.branco })
+
+  -- Fundo preto puro
+  hl(0, "Normal",      { fg = cor.branco, bg = "#000000" })
+  hl(0, "NormalNC",    { bg = "#000000" })
+  hl(0, "NormalFloat", { bg = "#000000" })
+  hl(0, "SignColumn",  { bg = "#000000" })
+  hl(0, "LineNr",      { bg = "#000000", fg = "#5c6370" })
+  hl(0, "EndOfBuffer", { bg = "#000000" })
+  hl(0, "CursorLine",  { bg = "#1a1a1a" })
 end
 
--- Colorscheme
 pcall(function()
   require("tokyonight").setup({
     style = "night",
     styles = {
       comments  = { italic = true },
-      keywords  = { bold   = false },
-      functions = { bold   = false },
+      keywords  = { bold = false },
+      functions = { bold = false },
     },
   })
   vim.cmd.colorscheme("tokyonight-night")
 end)
 
--- Aplica imediatamente após carregar o tema
 aplicar_highlights()
 
--- Reaaplica ao trocar de colorscheme
-vim.api.nvim_create_autocmd("ColorScheme", {
-  callback = aplicar_highlights,
-})
-
--- Reaaplica quando o LSP conecta (semantic tokens chegam com delay)
+vim.api.nvim_create_autocmd("ColorScheme", { callback = aplicar_highlights })
 vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function()
-    vim.defer_fn(aplicar_highlights, 300)
-  end,
+  callback = function() vim.defer_fn(aplicar_highlights, 300) end,
 })
