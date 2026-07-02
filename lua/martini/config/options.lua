@@ -1,43 +1,56 @@
 -- =========================================================
--- lua/martini/config/options.lua
--- Configurações de comportamento e editor
+-- TARGET: Neovim 0.12 · WSL / Ubuntu
+-- Entrada principal — carrega o patch, os plugins e os módulos
 -- =========================================================
 
-vim.g.mapleader = " "
+-- =========================================================
+-- PATCH: Bug no Neovim 0.12.2 — chave 'buf' inválida
+-- =========================================================
+do
+  local function corrigir_buf(opts)
+    if type(opts) == "table" and opts.buf ~= nil and opts.buffer == nil then
+      opts        = vim.tbl_extend("force", {}, opts)
+      opts.buffer = opts.buf
+      opts.buf    = nil
+    end
+    return opts
+  end
 
-vim.opt.number         = true
-vim.opt.relativenumber = false
-vim.opt.clipboard      = "unnamedplus"
-vim.opt.tabstop        = 4
-vim.opt.shiftwidth     = 4
-vim.opt.expandtab      = true
-vim.opt.cursorline     = true
-vim.opt.signcolumn     = "yes"
-vim.opt.fillchars      = { vert = "│" }
-vim.opt.colorcolumn    = "80"
-vim.opt.wrap           = true
-vim.opt.linebreak      = true
-vim.opt.textwidth      = 80
-vim.opt.termguicolors  = true
-vim.opt.swapfile       = false
-vim.opt.backup         = false
-vim.opt.writebackup    = false
-vim.opt.guifont        = "FiraCode Nerd Font Mono:h11"
+  local orig_create = vim.api.nvim_create_autocmd
+  vim.api.nvim_create_autocmd = function(event, opts)
+    return orig_create(event, corrigir_buf(opts))
+  end
 
-vim.o.completeopt = "menu,menuone,noselect"
+  local orig_exec = vim.api.nvim_exec_autocmds
+  vim.api.nvim_exec_autocmds = function(event, opts)
+    return orig_exec(event, corrigir_buf(opts))
+  end
+end
 
--- Diagnósticos
-local sev = vim.diagnostic.severity
-vim.diagnostic.config({
-  severity_sort    = true,
-  update_in_insert = false,
-  float = { border = "rounded", source = true },
-  signs = {
-    text = {
-      [sev.ERROR] = "E",
-      [sev.WARN]  = "W",
-      [sev.INFO]  = "I",
-      [sev.HINT]  = "H",
-    },
-  },
-})
+-- =========================================================
+-- PLUGINS — carregamento e boot guard
+-- =========================================================
+local primeiro_boot = require("martini.loader")
+
+if primeiro_boot then
+  vim.notify("Plugins baixados. Reinicie o Neovim.", vim.log.levels.WARN)
+  return
+end
+
+-- =========================================================
+-- CONFIG — comportamento, aparência e atalhos
+-- =========================================================
+require("martini.config.options")
+require("martini.config.colors")
+require("martini.config.keymaps")
+require("martini.config.dashboard")
+
+-- =========================================================
+-- PLUGINS — configuração de cada plugin
+-- =========================================================
+require("martini.plugins.ui")
+require("martini.plugins.lsp")
+require("martini.plugins.format")
+require("martini.plugins.debug")
+require("martini.plugins.runner")
+require("martini.plugins.http")

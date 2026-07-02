@@ -57,6 +57,7 @@ local plugins = {
   "nvim-tree/nvim-web-devicons",
   "akinsho/bufferline.nvim",
   "CRAG666/code_runner.nvim",
+  "mistweaverco/kulala.nvim",
 }
 
 for _, repo in ipairs(plugins) do carregar_plugin(repo) end
