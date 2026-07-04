@@ -87,14 +87,4 @@ local function carregar_dashboard()
   vim.keymap.set("n", "e", ":NvimTreeToggle<CR>",  o)
   vim.keymap.set("n", "c", ":e $MYVIMRC<CR>",      o)
   vim.keymap.set("n", "t", function()
-    vim.cmd("botright split | resize 15 | terminal")
-    vim.cmd("startinsert")
-  end, o)
-  vim.keymap.set("n", "q", ":qa<CR>", o)
-end
-
-vim.api.nvim_create_autocmd("VimEnter", {
-  callback = function()
-    vim.schedule(carregar_dashboard)
-  end,
-})
+ 
