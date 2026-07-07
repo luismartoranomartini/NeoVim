@@ -82,10 +82,14 @@ end
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(args)
     local opts = { buffer = args.buf, silent = true }
-    vim.keymap.set("n", "gd",         vim.lsp.buf.definition,  opts)
-    vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
-    vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
-    vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+    vim.keymap.set("n", "K",  vim.lsp.buf.hover,       opts)
+    -- vim.diagnostic.goto_prev/goto_next estão descontinuadas desde o
+    -- Neovim 0.11 em favor de vim.diagnostic.jump({count, float}).
+    -- float = true reproduz o comportamento antigo de abrir a janela
+    -- flutuante com a mensagem do diagnóstico ao pular.
+    vim.keymap.set("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, opts)
+    vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1,  float = true }) end, opts)
   end,
 })
 
