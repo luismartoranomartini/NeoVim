@@ -1,4 +1,4 @@
-itle
+Title
 Atalhos de Teclado — Configuração Neovim (martini)
 
 Author
