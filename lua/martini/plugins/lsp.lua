@@ -76,6 +76,21 @@ if ok_cmp and ok_snip then
     cmp.event:on("confirm_done",
       require("nvim-autopairs.completion.cmp").on_confirm_done())
   end)
+
+  -- HTMX: completa atributos hx-* (hx-get, hx-post, hx-trigger, hx-swap
+  -- etc.) via yochem/cmp-htmx. Restrito a html e ao filetype customizado
+  -- de templates Go (gohtmltmpl, definido em ui.lua), para não poluir o
+  -- autocomplete em outros filetypes onde hx-* não faz sentido.
+  pcall(function()
+    cmp.setup.filetype({ "html", "gohtmltmpl" }, {
+      sources = cmp.config.sources(
+        { { name = "cmp-htmx"  } },
+        { { name = "nvim_lsp" } },
+        { { name = "luasnip"  } },
+        { { name = "buffer"   } }
+      ),
+    })
+  end)
 end
 
 -- ── Keymaps LSP (ativados ao conectar) ───────────────────

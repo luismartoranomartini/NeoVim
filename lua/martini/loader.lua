@@ -33,14 +33,17 @@ local function carregar_plugin(repo)
 end
 
 local plugins = {
+  -- Temas: só o tokyonight é ativado em colors.lua (vim.cmd.colorscheme).
+  -- onedark e nightfox ficam disponíveis como alternativas, mas não são
+  -- usados no momento — troque o colorscheme em colors.lua para ativá-los.
   "folke/tokyonight.nvim",
   "navarasu/onedark.nvim",
   "EdenEast/nightfox.nvim",
-  "folke/tokyonight.nvim",
   "nvim-treesitter/nvim-treesitter",
   "hrsh7th/nvim-cmp",
   "hrsh7th/cmp-nvim-lsp",
   "hrsh7th/cmp-buffer",
+  "yochem/cmp-htmx",
   "L3MON4D3/LuaSnip",
   "saadparwaiz1/cmp_luasnip",
   "rafamadriz/friendly-snippets",
