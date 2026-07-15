@@ -18,6 +18,7 @@ local function aplicar_highlights()
     roxo     = "#bd93f9",  -- booleanos, nil, builtins
     cinza    = "#7a8290",  -- comentários
     branco   = "#ffffff",  -- variáveis e texto
+    escape   = "#ffee58",  -- sequências de escape dentro de strings (\n, \t, \", etc.)
   }
 
   -- Funções e métodos → AZUL
@@ -56,8 +57,28 @@ local function aplicar_highlights()
 
   -- Strings → VERDE
   hl(0, "@string",         { fg = cor.verde })
-  hl(0, "@string.escape",  { fg = cor.verde })
   hl(0, "String",          { fg = cor.verde })
+
+  -- IMPORTANTE: o semantic token do gopls (@lsp.type.string.go) marca a
+  -- string inteira como um único token "string", sem distinguir a parte
+  -- de escape (\n, \t, etc.). Por padrão o Neovim faz esse grupo linkar
+  -- para @string (prioridade 125, mais alta que a sintaxe legada), o que
+  -- pinta tudo de verde e esconde a distinção. Limpando o link aqui, a
+  -- cor cai para a sintaxe legada (goString/goEscapeC), que já distingue
+  -- corretamente string normal (String) de escape (Special).
+  hl(0, "@lsp.type.string",    {})
+  hl(0, "@lsp.type.string.go", {})
+
+  -- Sequências de escape dentro de strings (\n, \t, \", \\, etc.) → AMARELO VIVO
+  -- Precisa vir DEPOIS do highlight de @string para não ser sobrescrito,
+  -- e cobre tanto o grupo do Treesitter quanto o legado (syntax/regex).
+  hl(0, "@string.escape",     { fg = cor.escape })
+  hl(0, "@string.escape.go",  { fg = cor.escape })
+  hl(0, "@string.special",    { fg = cor.escape })
+  hl(0, "@escape",            { fg = cor.escape })
+  hl(0, "@punctuation.special", { fg = cor.escape })
+  hl(0, "Special",            { fg = cor.escape })
+  hl(0, "SpecialChar",        { fg = cor.escape })
 
   -- Números e constantes → LARANJA
   hl(0, "@number",   { fg = cor.laranja })
