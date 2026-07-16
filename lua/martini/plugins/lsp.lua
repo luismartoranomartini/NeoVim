@@ -225,3 +225,32 @@ do
     vim.notify("LSP não encontrado: yaml-language-server", vim.log.levels.WARN)
   end
 end
+
+-- sqlls (joe-re/sql-language-server): sucessor oficial do sqls, que está
+-- descontinuado — confirmado no fórum oficial do Neovim e em fontes
+-- atualizadas de 2025/2026. Instalar com:
+--   npm install -g sql-language-server
+-- O binário exige o subcomando "up" e a flag "--method stdio" (diferente
+-- do "--stdio" simples do configurar_lsp), por isso um bloco à parte.
+--
+-- IMPORTANTE: sem um arquivo de credenciais, o sqlls valida sintaxe SQL
+-- mas NÃO sugere nomes reais de tabelas/colunas do seu banco. Para isso,
+-- crie um dos dois:
+--   pessoal:  ~/.config/sql-language-server/.sqllsrc.json
+--   por projeto: <raiz-do-projeto>/.sqllsrc.json
+-- Formato (exemplo Postgres), documentado em joe-re/sql-language-server:
+--   { "name": "meu-projeto", "adapter": "postgres", "host": "localhost",
+--     "port": 5432, "user": "postgres", "database": "meu_banco" }
+do
+  local caminho = vim.fn.exepath("sql-language-server")
+  if caminho ~= "" then
+    vim.lsp.config["sqlls"] = {
+      cmd          = { caminho, "up", "--method", "stdio" },
+      filetypes    = { "sql" },
+      root_markers = { ".sqllsrc.json", ".git" },
+    }
+    vim.lsp.enable("sqlls")
+  else
+    vim.notify("LSP não encontrado: sql-language-server", vim.log.levels.WARN)
+  end
+end

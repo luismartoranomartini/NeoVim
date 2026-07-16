@@ -63,7 +63,62 @@ local plugins = {
   "mistweaverco/kulala.nvim",
 }
 
+-- Atualiza um plugin já clonado: busca o HEAD atual do repositório remoto
+-- e reseta a cópia local para ele. Usa "git fetch --depth 1 origin HEAD"
+-- em vez de um "git pull" comum porque os clones aqui são rasos
+-- (--depth 1, sem histórico completo) — esse fluxo evita erros de
+-- negociação de histórico e mantém o clone raso após atualizar, em vez
+-- de baixar todo o histórico do projeto a cada atualização.
+local function atualizar_plugin(repo)
+  local nome    = repo:match(".*/(.*)")
+  local caminho = pack_path .. nome
+
+  if vim.fn.isdirectory(caminho .. "/.git") == 0 then
+    print("Ainda não baixado, pulando: " .. nome)
+    return true
+  end
+
+  print("Atualizando: " .. nome .. "...")
+  local fetch = vim.fn.system({
+    "git", "-C", caminho, "fetch", "--depth", "1", "origin", "HEAD",
+  })
+  if vim.v.shell_error ~= 0 then
+    vim.notify("FALHA ao buscar atualização: " .. repo .. "\n" .. fetch, vim.log.levels.ERROR)
+    return false
+  end
+
+  local reset = vim.fn.system({
+    "git", "-C", caminho, "reset", "--hard", "FETCH_HEAD",
+  })
+  if vim.v.shell_error ~= 0 then
+    vim.notify("FALHA ao aplicar atualização: " .. repo .. "\n" .. reset, vim.log.levels.ERROR)
+    return false
+  end
+
+  return true
+end
+
+-- Comando :AtualizarPlugins — roda git fetch + reset em todos os
+-- plugins já clonados. Bloqueia a interface enquanto roda (mesmo
+-- comportamento síncrono do carregar_plugin no primeiro boot); com
+-- ~24 plugins e --depth 1, costuma terminar em poucos segundos.
+vim.api.nvim_create_user_command("AtualizarPlugins", function()
+  local falhas = 0
+  for _, repo in ipairs(plugins) do
+    if not atualizar_plugin(repo) then
+      falhas = falhas + 1
+    end
+  end
+  vim.cmd("silent! helptags ALL")
+  if falhas == 0 then
+    vim.notify("Plugins atualizados. Reinicie o Neovim.", vim.log.levels.INFO)
+  else
+    vim.notify(falhas .. " plugin(s) falharam ao atualizar — veja as mensagens acima.", vim.log.levels.WARN)
+  end
+end, { desc = "Atualiza (git fetch + reset) todos os plugins clonados pelo loader" })
+
 for _, repo in ipairs(plugins) do carregar_plugin(repo) end
 vim.cmd("silent! helptags ALL")
 
 return primeiro_boot
+

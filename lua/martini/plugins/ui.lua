@@ -34,7 +34,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 -- Treesitter
 pcall(function()
   require("nvim-treesitter.configs").setup({
-    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "dockerfile" },
+    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "dockerfile", "sql" },
     auto_install     = true,
     highlight        = { enable = true },
     indent           = { enable = true },
@@ -44,7 +44,7 @@ end)
 -- Força o início do Treesitter highlight ao abrir arquivos.
 -- Necessário no 0.12 onde highlight={enable=true} nem sempre dispara sozinho.
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "yaml.docker-compose", "dockerfile" },
+  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "yaml.docker-compose", "dockerfile", "sql" },
   callback = function(args)
     pcall(vim.treesitter.start, args.buf)
   end,

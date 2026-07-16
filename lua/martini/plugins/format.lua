@@ -118,6 +118,11 @@ pcall(function()
       python     = { "black" },
       html       = { "prettier" },
       css        = { "prettier" },
+      -- Nome de configuração é "sql_formatter" (underscore), mesmo o
+      -- pacote npm real se chamando "sql-formatter" (hífen) — pegadinha
+      -- documentada em discussões do próprio conform.nvim/LazyVim.
+      -- Instalar com: npm install -g sql-formatter
+      sql        = { "sql_formatter" },
     },
     format_on_save = {
       timeout_ms = 1000,
