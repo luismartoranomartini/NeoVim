@@ -175,3 +175,53 @@ do
     vim.notify("LSP não encontrado: clangd", vim.log.levels.WARN)
   end
 end
+
+-- docker_language_server: Dockerfile e Compose (docker-compose.yml) no
+-- mesmo servidor. Instalar com:
+--   go install github.com/docker/docker-language-server/cmd/docker-language-server@latest
+-- O binário usa o subcomando "start" antes do "--stdio" (diferente do
+-- padrão {caminho, "--stdio"} do configurar_lsp), por isso um bloco à parte.
+do
+  local caminho = vim.fn.exepath("docker-language-server")
+  if caminho ~= "" then
+    vim.lsp.config["docker_language_server"] = {
+      cmd          = { caminho, "start", "--stdio" },
+      filetypes    = { "dockerfile", "yaml.docker-compose" },
+      root_markers = {
+        "Dockerfile", "docker-compose.yaml", "docker-compose.yml",
+        "compose.yaml", "compose.yml", ".git",
+      },
+    }
+    vim.lsp.enable("docker_language_server")
+  else
+    vim.notify("LSP não encontrado: docker-language-server", vim.log.levels.WARN)
+  end
+end
+
+-- yamlls: YAML genérico + esquema do Kubernetes.
+-- Instalar com: npm install -g yaml-language-server
+-- "kubernetes" é uma palavra reservada aceita pelo yaml-language-server:
+-- ele detecta manifestos Kubernetes pelo conteúdo (apiVersion/kind), não
+-- só pelo nome do arquivo — confirmado na documentação oficial do projeto
+-- (redhat-developer/yaml-language-server). schemaStore habilita detecção
+-- automática de outros esquemas comuns (GitHub Actions, Compose, etc.)
+-- vindos do JSON Schema Store.
+do
+  local caminho = vim.fn.exepath("yaml-language-server")
+  if caminho ~= "" then
+    vim.lsp.config["yamlls"] = {
+      cmd          = { caminho, "--stdio" },
+      filetypes    = { "yaml" },
+      root_markers = { ".git" },
+      settings = {
+        yaml = {
+          schemaStore = { enable = true },
+          schemas     = { kubernetes = "*.yaml" },
+        },
+      },
+    }
+    vim.lsp.enable("yamlls")
+  else
+    vim.notify("LSP não encontrado: yaml-language-server", vim.log.levels.WARN)
+  end
+end

@@ -14,6 +14,12 @@ vim.filetype.add({
   pattern = {
     -- pega nomes compostos como home.page.tmpl, layout.base.tmpl, etc.
     [".*%.tmpl"] = "html",
+    -- docker-compose.yml / compose.yaml / docker-compose.dev.yml etc.
+    -- Filetype composto "yaml.docker-compose", esperado pelo
+    -- docker-language-server (docker/docker-language-server) para
+    -- ativar os recursos específicos de Compose.
+    [".*docker%-compose.*%.ya?ml"] = "yaml.docker-compose",
+    [".*compose.*%.ya?ml"]         = "yaml.docker-compose",
   },
 })
 
@@ -28,7 +34,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 -- Treesitter
 pcall(function()
   require("nvim-treesitter.configs").setup({
-    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c" },
+    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "dockerfile" },
     auto_install     = true,
     highlight        = { enable = true },
     indent           = { enable = true },
@@ -38,7 +44,7 @@ end)
 -- Força o início do Treesitter highlight ao abrir arquivos.
 -- Necessário no 0.12 onde highlight={enable=true} nem sempre dispara sozinho.
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c" },
+  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "yaml.docker-compose", "dockerfile" },
   callback = function(args)
     pcall(vim.treesitter.start, args.buf)
   end,
@@ -50,7 +56,10 @@ pcall(function()
 end)
 
 -- Emmet
-vim.g.user_emmet_mode           = "i"
+-- "iv" = inserção + visual. O modo visual é necessário para o
+-- "Wrap with Abbreviation" (selecionar texto e envolver numa tag),
+-- documentado em :help emmet-wrap-with-abbreviation.
+vim.g.user_emmet_mode           = "iv"
 vim.g.user_emmet_install_global = 0
 
 vim.api.nvim_create_autocmd("FileType", {
