@@ -176,21 +176,29 @@ do
   end
 end
 
--- docker_language_server: Dockerfile e Compose (docker-compose.yml) no
--- mesmo servidor. Instalar com:
+-- docker_language_server: só Dockerfile.
+-- Instalar com:
 --   go install github.com/docker/docker-language-server/cmd/docker-language-server@latest
 -- O binário usa o subcomando "start" antes do "--stdio" (diferente do
 -- padrão {caminho, "--stdio"} do configurar_lsp), por isso um bloco à parte.
+--
+-- IMPORTANTE: o suporte a Compose (yaml.docker-compose) deste servidor foi
+-- removido daqui de propósito. Testado e confirmado quebrado: um
+-- docker-compose.yml era analisado com o parser de Dockerfile (erro
+-- "unknown instruction: version:"), a versão instalada relata
+-- "0.0.0" (build de desenvolvimento, não uma release estável), e o log
+-- mostra o servidor rejeitando "$/cancelRequest" — uma notificação padrão
+-- do protocolo LSP. Some com isso as várias issues abertas com a tag
+-- "compose" no repositório oficial (github.com/docker/docker-language-server),
+-- a maioria de 2025: o suporte a Compose desse projeto ainda é imaturo.
+-- yamlls (abaixo) assume esse papel de forma mais estável.
 do
   local caminho = vim.fn.exepath("docker-language-server")
   if caminho ~= "" then
     vim.lsp.config["docker_language_server"] = {
       cmd          = { caminho, "start", "--stdio" },
-      filetypes    = { "dockerfile", "yaml.docker-compose" },
-      root_markers = {
-        "Dockerfile", "docker-compose.yaml", "docker-compose.yml",
-        "compose.yaml", "compose.yml", ".git",
-      },
+      filetypes    = { "dockerfile" },
+      root_markers = { "Dockerfile", ".git" },
     }
     vim.lsp.enable("docker_language_server")
   else
@@ -198,20 +206,24 @@ do
   end
 end
 
--- yamlls: YAML genérico + esquema do Kubernetes.
+-- yamlls: YAML genérico + esquema do Kubernetes + Compose.
 -- Instalar com: npm install -g yaml-language-server
 -- "kubernetes" é uma palavra reservada aceita pelo yaml-language-server:
 -- ele detecta manifestos Kubernetes pelo conteúdo (apiVersion/kind), não
 -- só pelo nome do arquivo — confirmado na documentação oficial do projeto
 -- (redhat-developer/yaml-language-server). schemaStore habilita detecção
--- automática de outros esquemas comuns (GitHub Actions, Compose, etc.)
--- vindos do JSON Schema Store.
+-- automática de outros esquemas comuns do JSON Schema Store — inclusive
+-- o do Docker Compose, cobrindo o filetype yaml.docker-compose que
+-- tiramos do docker_language_server acima (ver comentário ali para o
+-- motivo). Não é uma feature Docker-específica (não linka nomes de
+-- imagem, por exemplo), mas valida a estrutura do arquivo de forma
+-- estável.
 do
   local caminho = vim.fn.exepath("yaml-language-server")
   if caminho ~= "" then
     vim.lsp.config["yamlls"] = {
       cmd          = { caminho, "--stdio" },
-      filetypes    = { "yaml" },
+      filetypes    = { "yaml", "yaml.docker-compose" },
       root_markers = { ".git" },
       settings = {
         yaml = {

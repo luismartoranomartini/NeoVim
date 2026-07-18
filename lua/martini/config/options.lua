@@ -36,3 +36,4 @@ vim.diagnostic.config({
     },
   },
 })
+
