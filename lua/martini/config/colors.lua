@@ -7,9 +7,9 @@ local function aplicar_highlights()
   -- Paleta com saturação equilibrada, tons frios predominantes
   local cor = {
     azul     = "#7aa2f7",  -- funções, métodos
-    ciano    = "#b3e3ff",  -- pacotes / namespaces
+    ciano    = "#f5f2d0",  -- pacotes / namespaces 
     dourado  = "#DCC218",  -- tipos e structs
-    coral    = "#f7768e",  -- keywords (func, return, if, for)
+    coral    = "#ff2f00",  -- keywords (func, return, if, for)
     verde    = "#9ece6a",  -- strings
     laranja  = "#FFD700",  -- números e constantes
     lavanda  = "#D1A1D6",  -- operadores
