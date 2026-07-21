@@ -1,5 +1,5 @@
 -- =========================================================
--- TARGET: Neovim 0.12 · WSL / Ubuntu
+-- TARGET: Neovim 0.12  
 -- Entrada principal — carrega o patch, os plugins e os módulos
 -- =========================================================
 
