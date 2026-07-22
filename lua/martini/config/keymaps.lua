@@ -112,3 +112,4 @@ vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end,     
 -- Code runner
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })
 vim.keymap.set("n", "<leader>rp", ":RunProject<CR>", { desc = "Executar projeto" })
+
