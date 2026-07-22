@@ -151,3 +151,13 @@ pcall(function()
     },
   })
 end)
+
+-- Lorem Ipsum: derektata/lorem.nvim
+-- :LoremIpsum words 50        → 50 palavras
+-- :LoremIpsum paragraphs 3    → 3 parágrafos
+-- Digitar "lorem5p" + espaço também funciona (5 parágrafos direto no texto).
+pcall(function()
+  require("lorem").setup({
+    sentence_length = "mixed",
+  })
+end)

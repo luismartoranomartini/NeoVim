@@ -61,6 +61,7 @@ local plugins = {
   "akinsho/bufferline.nvim",
   "CRAG666/code_runner.nvim",
   "mistweaverco/kulala.nvim",
+  "derektata/lorem.nvim",
 }
 
 -- Atualiza um plugin já clonado: busca o HEAD atual do repositório remoto
@@ -121,4 +122,3 @@ for _, repo in ipairs(plugins) do carregar_plugin(repo) end
 vim.cmd("silent! helptags ALL")
 
 return primeiro_boot
-

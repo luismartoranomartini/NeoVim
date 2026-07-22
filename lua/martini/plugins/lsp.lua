@@ -3,14 +3,42 @@
 -- LSP (Neovim 0.12 API), nvim-cmp e LuaSnip
 -- =========================================================
 
--- Verifica se a posição atual tem uma abreviação Emmet válida
+-- Verifica se a posição atual tem uma abreviação Emmet válida.
+-- Exige pelo menos um caractere ESTRUTURAL do Emmet (. # > * [ ] ) - $)
+-- além de letras/números — evita que o Tab sequestre o autocomplete
+-- normal de palavras simples (ex.: digitar "Meu", "site"), que não têm
+-- nada disso. Sem essa restrição, qualquer palavra comum seria tratada
+-- como abreviação válida, já que a regex casava com letras soltas.
+--
+-- Trata "{texto literal}" (ex.: ul>li{Item $}) como um bloco único antes
+-- de checar o restante — o conteúdo dentro das chaves pode ter espaços
+-- (ex.: "Item $"), que quebrariam a busca por um trecho contíguo se
+-- não fossem tratados à parte primeiro.
 local emmet_fts = { html = true, css = true, scss = true, jsx = true, tsx = true, gohtmltmpl = true }
 
 local function emmet_expandable()
   if not emmet_fts[vim.bo.filetype] then return false end
   local col    = vim.fn.col(".") - 1
   local before = vim.fn.getline("."):sub(1, col)
-  return before:match("[%w%.#%[%]>%)%*]+$") ~= nil
+
+  local scan = before
+  if scan:sub(-1) == "}" then
+    local open_pos = nil
+    for i = #scan - 1, 1, -1 do
+      local c = scan:sub(i, i)
+      if c == "{" then open_pos = i break end
+      if c == "}" then break end -- chaves aninhadas: não tenta
+    end
+    if open_pos then
+      -- substitui o miolo "{...}" por um marcador simples, para o
+      -- trecho continuar contíguo na checagem seguinte
+      scan = scan:sub(1, open_pos - 1) .. "X"
+    end
+  end
+
+  local token = scan:match("[%w%.#%[%]>%)%*%-%$X]+$")
+  if not token then return false end
+  return token:match("[%.#%[%]>%)%*%-%$X]") ~= nil
 end
 
 -- ── nvim-cmp + LuaSnip ───────────────────────────────────
@@ -35,18 +63,22 @@ if ok_cmp and ok_snip then
       ["<C-e>"]     = cmp.mapping.abort(),
       ["<C-d>"]     = cmp.mapping.scroll_docs(4),
       ["<C-u>"]     = cmp.mapping.scroll_docs(-4),
+      -- Ordem alterada: abreviação Emmet estrutural (ul>li*3, div.foo,
+      -- p>lorem5 etc.) tem prioridade sobre o menu de autocomplete, que
+      -- antes sempre vencia quando estava visível — era exatamente por
+      -- isso que "ul>li*3" não expandia com o menu do LSP de HTML aberto.
       ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then
-          luasnip.expand_or_jump()
-        elseif emmet_expandable() then
+        if emmet_expandable() then
           cmp.close()
           vim.schedule(function()
             vim.fn.feedkeys(
               vim.api.nvim_replace_termcodes("<plug>(emmet-expand-abbr)", true, false, true), ""
             )
           end)
+        elseif cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
         else
           fallback()
         end
