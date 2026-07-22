@@ -6,10 +6,10 @@ local function aplicar_highlights()
   local hl = vim.api.nvim_set_hl
   -- Paleta com saturação equilibrada, tons frios predominantes
   local cor = {
-    azul     = "#544efc",  -- funções, métodos
+    azul     = "#6e7efa",  -- funções, métodos
     ciano    = "#5ea9ff",  -- pacotes / namespaces 
     dourado  = "#DCC218",  -- tipos e structs
-    coral    = "#ff2f00",  -- keywords (func, return, if, for)
+    coral    = "#ff0000",  -- keywords (func, return, if, for)
     verde    = "#6ace6d",  -- strings
     laranja  = "#FFD700",  -- números e constantes
     lavanda  = "#e63bf7",  -- operadores
