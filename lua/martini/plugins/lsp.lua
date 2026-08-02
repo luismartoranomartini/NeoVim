@@ -3,42 +3,14 @@
 -- LSP (Neovim 0.12 API), nvim-cmp e LuaSnip
 -- =========================================================
 
--- Verifica se a posição atual tem uma abreviação Emmet válida.
--- Exige pelo menos um caractere ESTRUTURAL do Emmet (. # > * [ ] ) - $)
--- além de letras/números — evita que o Tab sequestre o autocomplete
--- normal de palavras simples (ex.: digitar "Meu", "site"), que não têm
--- nada disso. Sem essa restrição, qualquer palavra comum seria tratada
--- como abreviação válida, já que a regex casava com letras soltas.
---
--- Trata "{texto literal}" (ex.: ul>li{Item $}) como um bloco único antes
--- de checar o restante — o conteúdo dentro das chaves pode ter espaços
--- (ex.: "Item $"), que quebrariam a busca por um trecho contíguo se
--- não fossem tratados à parte primeiro.
+-- Verifica se a posição atual tem uma abreviação Emmet válida
 local emmet_fts = { html = true, css = true, scss = true, jsx = true, tsx = true, gohtmltmpl = true }
 
 local function emmet_expandable()
   if not emmet_fts[vim.bo.filetype] then return false end
   local col    = vim.fn.col(".") - 1
   local before = vim.fn.getline("."):sub(1, col)
-
-  local scan = before
-  if scan:sub(-1) == "}" then
-    local open_pos = nil
-    for i = #scan - 1, 1, -1 do
-      local c = scan:sub(i, i)
-      if c == "{" then open_pos = i break end
-      if c == "}" then break end -- chaves aninhadas: não tenta
-    end
-    if open_pos then
-      -- substitui o miolo "{...}" por um marcador simples, para o
-      -- trecho continuar contíguo na checagem seguinte
-      scan = scan:sub(1, open_pos - 1) .. "X"
-    end
-  end
-
-  local token = scan:match("[%w%.#%[%]>%)%*%-%$X]+$")
-  if not token then return false end
-  return token:match("[%.#%[%]>%)%*%-%$X]") ~= nil
+  return before:match("[%w%.#%[%]>%)%*]+$") ~= nil
 end
 
 -- ── nvim-cmp + LuaSnip ───────────────────────────────────
@@ -63,22 +35,18 @@ if ok_cmp and ok_snip then
       ["<C-e>"]     = cmp.mapping.abort(),
       ["<C-d>"]     = cmp.mapping.scroll_docs(4),
       ["<C-u>"]     = cmp.mapping.scroll_docs(-4),
-      -- Ordem alterada: abreviação Emmet estrutural (ul>li*3, div.foo,
-      -- p>lorem5 etc.) tem prioridade sobre o menu de autocomplete, que
-      -- antes sempre vencia quando estava visível — era exatamente por
-      -- isso que "ul>li*3" não expandia com o menu do LSP de HTML aberto.
       ["<Tab>"] = cmp.mapping(function(fallback)
-        if emmet_expandable() then
+        if cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+        elseif emmet_expandable() then
           cmp.close()
           vim.schedule(function()
             vim.fn.feedkeys(
               vim.api.nvim_replace_termcodes("<plug>(emmet-expand-abbr)", true, false, true), ""
             )
           end)
-        elseif cmp.visible() then
-          cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then
-          luasnip.expand_or_jump()
         else
           fallback()
         end
@@ -108,35 +76,17 @@ if ok_cmp and ok_snip then
     cmp.event:on("confirm_done",
       require("nvim-autopairs.completion.cmp").on_confirm_done())
   end)
-
-  -- HTMX: completa atributos hx-* (hx-get, hx-post, hx-trigger, hx-swap
-  -- etc.) via yochem/cmp-htmx. Restrito a html e ao filetype customizado
-  -- de templates Go (gohtmltmpl, definido em ui.lua), para não poluir o
-  -- autocomplete em outros filetypes onde hx-* não faz sentido.
-  pcall(function()
-    cmp.setup.filetype({ "html", "gohtmltmpl" }, {
-      sources = cmp.config.sources(
-        { { name = "cmp-htmx"  } },
-        { { name = "nvim_lsp" } },
-        { { name = "luasnip"  } },
-        { { name = "buffer"   } }
-      ),
-    })
-  end)
 end
 
 -- ── Keymaps LSP (ativados ao conectar) ───────────────────
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(args)
     local opts = { buffer = args.buf, silent = true }
-    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-    vim.keymap.set("n", "K",  vim.lsp.buf.hover,       opts)
-    -- vim.diagnostic.goto_prev/goto_next estão descontinuadas desde o
-    -- Neovim 0.11 em favor de vim.diagnostic.jump({count, float}).
-    -- float = true reproduz o comportamento antigo de abrir a janela
-    -- flutuante com a mensagem do diagnóstico ao pular.
-    vim.keymap.set("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, opts)
-    vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1,  float = true }) end, opts)
+    vim.keymap.set("n", "gd",         vim.lsp.buf.definition,  opts)
+    vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
+    vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
+    vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename,       opts)
   end,
 })
 
@@ -205,96 +155,5 @@ do
     vim.lsp.enable("clangd")
   else
     vim.notify("LSP não encontrado: clangd", vim.log.levels.WARN)
-  end
-end
-
--- docker_language_server: só Dockerfile.
--- Instalar com:
---   go install github.com/docker/docker-language-server/cmd/docker-language-server@latest
--- O binário usa o subcomando "start" antes do "--stdio" (diferente do
--- padrão {caminho, "--stdio"} do configurar_lsp), por isso um bloco à parte.
---
--- IMPORTANTE: o suporte a Compose (yaml.docker-compose) deste servidor foi
--- removido daqui de propósito. Testado e confirmado quebrado: um
--- docker-compose.yml era analisado com o parser de Dockerfile (erro
--- "unknown instruction: version:"), a versão instalada relata
--- "0.0.0" (build de desenvolvimento, não uma release estável), e o log
--- mostra o servidor rejeitando "$/cancelRequest" — uma notificação padrão
--- do protocolo LSP. Some com isso as várias issues abertas com a tag
--- "compose" no repositório oficial (github.com/docker/docker-language-server),
--- a maioria de 2025: o suporte a Compose desse projeto ainda é imaturo.
--- yamlls (abaixo) assume esse papel de forma mais estável.
-do
-  local caminho = vim.fn.exepath("docker-language-server")
-  if caminho ~= "" then
-    vim.lsp.config["docker_language_server"] = {
-      cmd          = { caminho, "start", "--stdio" },
-      filetypes    = { "dockerfile" },
-      root_markers = { "Dockerfile", ".git" },
-    }
-    vim.lsp.enable("docker_language_server")
-  else
-    vim.notify("LSP não encontrado: docker-language-server", vim.log.levels.WARN)
-  end
-end
-
--- yamlls: YAML genérico + esquema do Kubernetes + Compose.
--- Instalar com: npm install -g yaml-language-server
--- "kubernetes" é uma palavra reservada aceita pelo yaml-language-server:
--- ele detecta manifestos Kubernetes pelo conteúdo (apiVersion/kind), não
--- só pelo nome do arquivo — confirmado na documentação oficial do projeto
--- (redhat-developer/yaml-language-server). schemaStore habilita detecção
--- automática de outros esquemas comuns do JSON Schema Store — inclusive
--- o do Docker Compose, cobrindo o filetype yaml.docker-compose que
--- tiramos do docker_language_server acima (ver comentário ali para o
--- motivo). Não é uma feature Docker-específica (não linka nomes de
--- imagem, por exemplo), mas valida a estrutura do arquivo de forma
--- estável.
-do
-  local caminho = vim.fn.exepath("yaml-language-server")
-  if caminho ~= "" then
-    vim.lsp.config["yamlls"] = {
-      cmd          = { caminho, "--stdio" },
-      filetypes    = { "yaml", "yaml.docker-compose" },
-      root_markers = { ".git" },
-      settings = {
-        yaml = {
-          schemaStore = { enable = true },
-          schemas     = { kubernetes = "*.yaml" },
-        },
-      },
-    }
-    vim.lsp.enable("yamlls")
-  else
-    vim.notify("LSP não encontrado: yaml-language-server", vim.log.levels.WARN)
-  end
-end
-
--- sqlls (joe-re/sql-language-server): sucessor oficial do sqls, que está
--- descontinuado — confirmado no fórum oficial do Neovim e em fontes
--- atualizadas de 2025/2026. Instalar com:
---   npm install -g sql-language-server
--- O binário exige o subcomando "up" e a flag "--method stdio" (diferente
--- do "--stdio" simples do configurar_lsp), por isso um bloco à parte.
---
--- IMPORTANTE: sem um arquivo de credenciais, o sqlls valida sintaxe SQL
--- mas NÃO sugere nomes reais de tabelas/colunas do seu banco. Para isso,
--- crie um dos dois:
---   pessoal:  ~/.config/sql-language-server/.sqllsrc.json
---   por projeto: <raiz-do-projeto>/.sqllsrc.json
--- Formato (exemplo Postgres), documentado em joe-re/sql-language-server:
---   { "name": "meu-projeto", "adapter": "postgres", "host": "localhost",
---     "port": 5432, "user": "postgres", "database": "meu_banco" }
-do
-  local caminho = vim.fn.exepath("sql-language-server")
-  if caminho ~= "" then
-    vim.lsp.config["sqlls"] = {
-      cmd          = { caminho, "up", "--method", "stdio" },
-      filetypes    = { "sql" },
-      root_markers = { ".sqllsrc.json", ".git" },
-    }
-    vim.lsp.enable("sqlls")
-  else
-    vim.notify("LSP não encontrado: sql-language-server", vim.log.levels.WARN)
   end
 end

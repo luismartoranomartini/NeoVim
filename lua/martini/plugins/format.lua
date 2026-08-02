@@ -47,10 +47,23 @@ end)
 -- receita oficial do time do gopls, generalizada aqui para reaproveitar
 -- em qualquer LSP que suporte esses kinds:
 -- https://go.dev/gopls/editor/vim#neovim-imports
+--
+-- ATENÇÃO (Neovim 0.11+): make_position_params(), make_range_params() e
+-- make_given_range_params() passaram a EXIGIR o parâmetro position_encoding.
+-- Chamar sem ele dispara o aviso:
+--   "position_encoding param is required in vim.lsp.util.make_range_params.
+--    Defaulting to position encoding of the first client."
+-- Por isso o encoding é lido do cliente conectado ao buffer e passado
+-- explicitamente. Referência: :help news-0.11 e neovim/neovim#31249.
 -- =========================================================
 local function aplicar_source_actions(kinds, wait_ms)
-  local params = vim.lsp.util.make_range_params()
+  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  if #clients == 0 then return end
+
+  local enc    = clients[1].offset_encoding or "utf-16"
+  local params = vim.lsp.util.make_range_params(0, enc)
   params.context = { only = kinds }
+
   -- buf_request_sync tem timeout padrão de 1000ms. Em projetos grandes,
   -- se notar que precisa salvar duas vezes para a mudança "pegar",
   -- aumente esse valor.
@@ -58,8 +71,8 @@ local function aplicar_source_actions(kinds, wait_ms)
   for cid, res in pairs(result or {}) do
     for _, r in pairs(res.result or {}) do
       if r.edit then
-        local enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or "utf-16"
-        vim.lsp.util.apply_workspace_edit(r.edit, enc)
+        local cliente_enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or "utf-16"
+        vim.lsp.util.apply_workspace_edit(r.edit, cliente_enc)
       end
     end
   end

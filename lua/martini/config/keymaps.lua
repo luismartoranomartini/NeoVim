@@ -79,16 +79,44 @@ vim.keymap.set("n", "gf", function()
   end
 end, { desc = "Abrir/criar arquivo sob o cursor (pasta atual, raiz do projeto ou buffer já aberto)" })
 
+-- =========================================================
 -- Terminal
-vim.keymap.set("t", "<Esc>",  "<C-\\><C-n>",       { desc = "Sair do modo terminal" })
-vim.keymap.set("t", "<C-w>",  "<C-\\><C-n><C-w>",  { desc = "Navegar splits de dentro do terminal" })
-vim.keymap.set("t", "<C-q>",  "<C-\\><C-n><C-w>q", { desc = "Fechar terminal" })
+-- =========================================================
+-- IMPORTANTE: nvim_win_close() e <C-w>q falham com E444 quando o terminal
+-- é a ÚNICA janela da aba — o Neovim não permite fechar a última janela.
+-- Nesse caso substituímos o terminal por um buffer vazio (:enew) e removemos
+-- o buffer do terminal, o que equivale a "fechar" sem violar a regra.
+
+local function fechar_janela_terminal(win, buf)
+  if #vim.api.nvim_list_wins() == 1 then
+    vim.cmd("enew")
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+  else
+    pcall(vim.api.nvim_win_close, win, false)
+  end
+end
+
+-- Fecha o terminal a partir do MODO TERMINAL.
+-- Sai do modo terminal antes de mexer nas janelas, senão o :enew
+-- é executado com o cursor ainda preso ao job do terminal.
+local function fechar_terminal_do_modo_terminal()
+  local win = vim.api.nvim_get_current_win()
+  local buf = vim.api.nvim_get_current_buf()
+
+  vim.api.nvim_feedkeys(
+    vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true), "n", false
+  )
+
+  vim.schedule(function()
+    fechar_janela_terminal(win, buf)
+  end)
+end
 
 local function toggle_terminal()
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     local buf = vim.api.nvim_win_get_buf(win)
     if vim.bo[buf].buftype == "terminal" then
-      vim.api.nvim_win_close(win, false)
+      fechar_janela_terminal(win, buf)
       return
     end
   end
@@ -96,8 +124,12 @@ local function toggle_terminal()
   vim.cmd("startinsert")
 end
 
-vim.keymap.set("n", "<C-t>", toggle_terminal,         { desc = "Toggle terminal" })
-vim.keymap.set("t", "<C-t>", "<C-\\><C-n><C-w>q",    { desc = "Fechar terminal com Ctrl+t" })
+vim.keymap.set("t", "<Esc>", "<C-\\><C-n>",      { desc = "Sair do modo terminal" })
+vim.keymap.set("t", "<C-w>", "<C-\\><C-n><C-w>", { desc = "Navegar splits de dentro do terminal" })
+
+vim.keymap.set("t", "<C-q>", fechar_terminal_do_modo_terminal, { desc = "Fechar terminal" })
+vim.keymap.set("t", "<C-t>", fechar_terminal_do_modo_terminal, { desc = "Fechar terminal com Ctrl+t" })
+vim.keymap.set("n", "<C-t>", toggle_terminal,                  { desc = "Toggle terminal" })
 
 -- Debugger
 vim.keymap.set("n", "<F5>",       function() require("dap").continue() end,          { desc = "Debug: continuar / iniciar" })
@@ -112,4 +144,3 @@ vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end,     
 -- Code runner
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })
 vim.keymap.set("n", "<leader>rp", ":RunProject<CR>", { desc = "Executar projeto" })
-
