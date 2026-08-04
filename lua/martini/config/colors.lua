@@ -50,6 +50,7 @@ local function aplicar_highlights()
   -- Keywords → VERMELHO
   hl(0, "@keyword",          { fg = cor.vermelho })
   hl(0, "@keyword.function", { fg = cor.vermelho, italic = true })
+  hl(0, "@keyword.type",     { fg = cor.vermelho, italic = true })  -- chan, map, interface, struct
   hl(0, "@keyword.return",   { fg = cor.vermelho })
   hl(0, "@keyword.import",   { fg = cor.vermelho })
   hl(0, "@conditional",      { fg = cor.vermelho })
