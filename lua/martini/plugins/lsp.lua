@@ -23,7 +23,17 @@ if ok_cmp and ok_snip then
   end)
 
   local capabilities = require("cmp_nvim_lsp").default_capabilities()
-  vim.lsp.config["*"] = { capabilities = capabilities }
+
+  -- O cliente LSP do Neovim represa notificações textDocument/didChange por
+  -- 150ms por padrão (flags.debounce_text_changes). Isso faz o servidor
+  -- responder ao pedido de completion com o buffer ainda desatualizado na
+  -- primeira letra digitada, exigindo uma segunda tecla para "sincronizar".
+  -- Zerar aqui aplica-se a TODOS os servidores, pois "*" é mesclado em
+  -- cada config individual (inclusive os blocos manuais do gopls/clangd).
+  vim.lsp.config["*"] = {
+    capabilities = capabilities,
+    flags        = { debounce_text_changes = 0 },
+  }
 
   cmp.setup({
     snippet = {
@@ -86,7 +96,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
     vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
     vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
-    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename,       opts)
   end,
 })
 
