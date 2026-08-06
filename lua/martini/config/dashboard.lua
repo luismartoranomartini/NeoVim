@@ -1,9 +1,9 @@
 -- =========================================================
 -- lua/martini/config/dashboard.lua
--- Tela inicial centralizada com ASCII art e menu
+-- Centered start screen with ASCII art and menu
 -- =========================================================
 
-local function carregar_dashboard()
+local function load_dashboard()
   if vim.fn.argc() > 0 then return end
 
   local buf = vim.api.nvim_create_buf(false, true)
@@ -33,11 +33,11 @@ local function carregar_dashboard()
   }
 
   local menu = {
-    { icon = " ", label = "Novo Arquivo", key = "n" },
-    { icon = " ", label = "Explorador",   key = "e" },
-    { icon = " ", label = "Configuração", key = "c" },
-    { icon = " ", label = "Terminal",     key = "t" },
-    { icon = " ", label = "Sair",         key = "q" },
+    { icon = " ", label = "New File",    key = "n" },
+    { icon = " ", label = "Explorer",    key = "e" },
+    { icon = " ", label = "Config",      key = "c" },
+    { icon = " ", label = "Terminal",    key = "t" },
+    { icon = " ", label = "Quit",        key = "q" },
   }
 
   local content_h = #ascii + 2 + (#menu * 2)
@@ -95,6 +95,6 @@ end
 
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
-    vim.schedule(carregar_dashboard)
+    vim.defer_fn(load_dashboard, 50)
   end,
 })
