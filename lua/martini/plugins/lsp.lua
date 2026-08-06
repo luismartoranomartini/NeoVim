@@ -71,11 +71,17 @@ if ok_cmp and ok_snip then
         end
       end, { "i", "s" }),
     }),
-    sources = cmp.config.sources(
-      { { name = "nvim_lsp" } },
-      { { name = "luasnip"  } },
-      { { name = "buffer"   } }
-    ),
+    sources = cmp.config.sources({
+      -- nvim_lsp e luasnip no MESMO grupo: assim os candidatos de
+      -- ambos entram na mesma disputa de pontuação de match, em
+      -- vez de o grupo do LSP suprimir o do snippet quando o gopls
+      -- devolve algum candidato para o mesmo prefixo (ex.: "wr" vs.
+      -- "http.ResponseWriter" depois que o buffer já usa o tipo).
+      { name = "nvim_lsp", priority = 900 },
+      { name = "luasnip",  priority = 1000 },
+    }, {
+      { name = "buffer" },
+    }),
     window = {
       completion    = cmp.config.window.bordered(),
       documentation = cmp.config.window.bordered(),
