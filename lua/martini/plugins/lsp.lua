@@ -61,11 +61,11 @@ if ok_cmp and ok_snip then
         end
       end, { "i", "s" }),
     }),
-    sources = cmp.config.sources(
-      { { name = "nvim_lsp" } },
-      { { name = "luasnip"  } },
-      { { name = "buffer"   } }
-    ),
+    sources = cmp.config.sources({
+      { name = "luasnip",  priority = 1000 },
+      { name = "nvim_lsp", priority = 750  },
+      { name = "buffer",   priority = 500  },
+    }),
     window = {
       completion    = cmp.config.window.bordered(),
       documentation = cmp.config.window.bordered(),
@@ -86,7 +86,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
     vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
     vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
-    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename,       opts)
   end,
 })
 
@@ -157,28 +156,3 @@ do
     vim.notify("LSP não encontrado: clangd", vim.log.levels.WARN)
   end
 end
-
--- =========================================================
--- Comando :LspRestart
--- Encerra todos os clients LSP anexados ao buffer atual e
--- reabre o arquivo, forçando reanexação (útil para casos como
--- watcher quebrado em volumes NTFS ou config recarregada).
--- =========================================================
-vim.api.nvim_create_user_command("LspRestart", function()
-  local bufnr   = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients({ bufnr = bufnr })
-
-  if #clients == 0 then
-    vim.notify("Nenhum client LSP ativo neste buffer", vim.log.levels.WARN)
-    return
-  end
-
-  for _, client in ipairs(clients) do
-    vim.notify("Reiniciando: " .. client.name, vim.log.levels.INFO)
-    client:stop(true)
-  end
-
-  vim.defer_fn(function()
-    vim.cmd("edit")
-  end, 500)
-end, { desc = "Reinicia os clients LSP anexados ao buffer atual" })
