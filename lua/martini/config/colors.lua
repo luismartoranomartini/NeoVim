@@ -18,9 +18,6 @@ local function aplicar_highlights()
     roxo     = "#bd93f9",  -- booleanos, nil, builtins
     cinza    = "#7a8290",  -- comentários
     branco   = "#ffffff",  -- variáveis e texto
-    turquesa = "#2dd4bf",  -- parâmetros de função (distinto de tipos/variáveis)
-    amarelo_pastel = "#f1fa8c",  -- escapes dentro de strings (\n, \t, \\, ...)
-    ciano_claro    = "#8be9fd",  -- verbos de formatação (%d, %s, %v, ...)
   }
 
   -- Funções e métodos → AZUL (itálico)
@@ -33,11 +30,11 @@ local function aplicar_highlights()
   hl(0, "@function",        { fg = cor.azul, italic = true })
   hl(0, "@function.method", { fg = cor.azul, italic = true })
 
-  -- Pacotes / namespaces → CIANO
-  hl(0, "@lsp.type.namespace",    { fg = cor.ciano })
-  hl(0, "@lsp.type.namespace.go", { fg = cor.ciano })
-  hl(0, "@namespace",  { fg = cor.ciano })
-  hl(0, "@module",     { fg = cor.ciano })
+  -- Pacotes / namespaces → CIANO (itálico)
+  hl(0, "@lsp.type.namespace",    { fg = cor.ciano, italic = true })
+  hl(0, "@lsp.type.namespace.go", { fg = cor.ciano, italic = true })
+  hl(0, "@namespace",  { fg = cor.ciano, italic = true })
+  hl(0, "@module",     { fg = cor.ciano, italic = true })
 
   -- Tipos e structs → AMARELO
   hl(0, "@lsp.type.type",    { fg = cor.amarelo })
@@ -47,27 +44,24 @@ local function aplicar_highlights()
   hl(0, "@type.definition", { fg = cor.amarelo })
   hl(0, "Type",             { fg = cor.amarelo })
 
-  -- Keywords → VERMELHO
-  hl(0, "@keyword",          { fg = cor.vermelho })
+  -- Keywords → VERMELHO (itálico)
+  hl(0, "@keyword",          { fg = cor.vermelho, italic = true })
   hl(0, "@keyword.function", { fg = cor.vermelho, italic = true })
-  hl(0, "@keyword.type",     { fg = cor.vermelho, italic = true })  -- chan, map, interface, struct
-  hl(0, "@keyword.return",   { fg = cor.vermelho })
-  hl(0, "@keyword.import",   { fg = cor.vermelho })
-  hl(0, "@conditional",      { fg = cor.vermelho })
-  hl(0, "@repeat",           { fg = cor.vermelho })
-  hl(0, "Keyword",           { fg = cor.vermelho })
-  hl(0, "Statement",         { fg = cor.vermelho })
+  hl(0, "@keyword.return",   { fg = cor.vermelho, italic = true })
+  hl(0, "@keyword.import",   { fg = cor.vermelho, italic = true })
+  hl(0, "@conditional",      { fg = cor.vermelho, italic = true })
+  hl(0, "@repeat",           { fg = cor.vermelho, italic = true })
+  hl(0, "Keyword",           { fg = cor.vermelho, italic = true })
+  hl(0, "Statement",         { fg = cor.vermelho, italic = true })
 
-  -- Strings → VERDE, escapes → AMARELO PASTEL
-  -- IMPORTANTE: o gopls manda semantic token "string" cobrindo a string
-  -- inteira (inclusive escapes). Como esse token tem prioridade maior que
-  -- o Treesitter, ele pintava tudo com uma única cor plana. Zerando
-  -- @lsp.type.string, o token do LSP não pinta nada e o Treesitter
-  -- (que já diferencia string normal de escape) volta a aparecer por baixo.
+  -- Strings → VERDE
+  -- Zeradas para @lsp.type.string* NÃO sobrescrever: assim o extmark do
+  -- scanner de verbos/escapes (abaixo) consegue pintar por cima sem
+  -- disputa de prioridade com o semantic token do gopls.
   hl(0, "@lsp.type.string",    {})
   hl(0, "@lsp.type.string.go", {})
   hl(0, "@string",         { fg = cor.verde })
-  hl(0, "@string.escape",  { fg = cor.amarelo_pastel, bold = true })
+  hl(0, "@string.escape",  { fg = cor.verde })
   hl(0, "String",          { fg = cor.verde })
 
   -- Números e constantes → LARANJA
@@ -91,23 +85,34 @@ local function aplicar_highlights()
   hl(0, "@comment", { fg = cor.cinza, italic = true })
   hl(0, "Comment",  { fg = cor.cinza, italic = true })
 
-  -- Variáveis (não-parâmetro) → BRANCO
+  -- Variáveis e parâmetros → BRANCO
   hl(0, "@lsp.type.variable",     { fg = cor.branco })
   hl(0, "@lsp.type.variable.go",  { fg = cor.branco })
+  hl(0, "@lsp.type.parameter",    { fg = cor.branco })
+  hl(0, "@lsp.type.parameter.go", { fg = cor.branco })
   hl(0, "@variable",        { fg = cor.branco })
   hl(0, "@variable.member", { fg = cor.branco })
+  hl(0, "@parameter",       { fg = cor.branco })
   hl(0, "Identifier",       { fg = cor.branco })
 
-  -- Parâmetros de função → TURQUESA + itálico
-  hl(0, "@lsp.type.parameter",     { fg = cor.turquesa, italic = true })
-  hl(0, "@lsp.type.parameter.go",  { fg = cor.turquesa, italic = true })
-  hl(0, "@variable.parameter",     { fg = cor.turquesa, italic = true })
-  hl(0, "@parameter",              { fg = cor.turquesa, italic = true })
+  -- Virtual text de diagnóstico (mensagem inline no fim da linha)
+  hl(0, "DiagnosticVirtualTextError", { fg = cor.vermelho })
+  hl(0, "DiagnosticVirtualTextWarn",  { fg = cor.laranja })
+  hl(0, "DiagnosticVirtualTextInfo",  { fg = cor.azul })
+  hl(0, "DiagnosticVirtualTextHint",  { fg = cor.cinza })
 
-  -- Verbos de formatação (%d, %s, %v, %+v, ...) dentro de strings de Go
-  -- Não existe nó de sintaxe para isso no Treesitter, então o grupo é
-  -- preenchido via extmarks (ver destacar_verbos_formato mais abaixo).
-  hl(0, "MartiniVerboFormato", { fg = cor.ciano_claro, bold = true })
+  -- Sinais do debugger (nvim-dap)
+  hl(0, "DapBreakpoint",          { fg = cor.vermelho })
+  hl(0, "DapBreakpointCondition", { fg = cor.laranja })
+  hl(0, "DapBreakpointRejected",  { fg = cor.cinza })
+  hl(0, "DapStopped",             { fg = cor.verde })
+  hl(0, "DapLogPoint",            { fg = cor.azul })
+
+  -- Verbos de formatação (%v, %s, %d...) → LARANJA em negrito
+  -- Sequências de escape (\n, \t...)      → ROSA em negrito
+  -- (aplicadas via extmark pelo scanner abaixo, não por Treesitter)
+  hl(0, "GoFormatVerb", { fg = cor.laranja, bold = true })
+  hl(0, "GoEscapeSeq",  { fg = cor.rosa,    bold = true })
 
   -- Fundo preto puro
   hl(0, "Normal",      { fg = cor.branco, bg = "#000000" })
@@ -124,8 +129,8 @@ pcall(function()
     style = "night",
     styles = {
       comments  = { italic = true },
-      keywords  = { bold = false },
-      functions = { bold = false },
+      keywords  = { italic = true, bold = false },
+      functions = { italic = true, bold = false },
     },
   })
   vim.cmd.colorscheme("tokyonight-night")
@@ -139,83 +144,84 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 -- =========================================================
--- Destaque de verbos de formatação (%d, %s, %v, %+v, ...)
--- Escaneia apenas o TEXTO DENTRO de literais de string do Go via
--- Treesitter (nunca o código fora delas), evitando falso-positivo
--- com o operador módulo (%) usado fora de strings.
+-- Scanner de verbos de formatação e escapes em strings Go
+-- Treesitter localiza os nós de string; regex Lua encontra
+-- %v, %s, %d... e \n, \t... dentro deles; extmark aplica a cor
+-- sem alterar o parser nem o texto do buffer.
 -- =========================================================
-local ns_verbo = vim.api.nvim_create_namespace("martini_verbos_formato")
+local go_verbs_ns = vim.api.nvim_create_namespace("martini_go_format_verbs")
 
--- Padrão de um verbo printf: % [flags] [largura] [.precisão] verbo
--- flags: - + espaço # 0   |   verbo: v T t b c d o O q x X U e E f F g G s p %
-local PADRAO_VERBO = "%%[%-+ #0]*[%d%*]*%.?[%d%*]*[vTtbcdoOqxXUeEfFgGsp%%]"
+-- %[flags][largura][.precisão]verbo — ex: %v %+d %5.2f %-10s %%
+local PADRAO_VERBO   = "%%[%-%+ 0#]*%d*%.?%d*[vTtbcdoqxXUeEfFgGsp%%]"
+-- \n \t \r \\ \" \' \a \b \f \v — sequências de escape comuns
+local PADRAO_ESCAPE  = "\\[ntrbfav\\'\"]"
 
--- Converte um índice de byte dentro do texto do nó para (linha, coluna)
--- absolutas do buffer, considerando que raw strings (`...`) podem ter
--- múltiplas linhas.
-local function posicao_absoluta(srow, scol, texto, byte_idx)
-  local antes = texto:sub(1, byte_idx - 1)
-  local _, quebras = antes:gsub("\n", "")
-  if quebras == 0 then
-    return srow, scol + byte_idx - 1
-  end
-  local ultima_quebra = 0
-  for pos in antes:gmatch("()\n") do ultima_quebra = pos end
-  return srow + quebras, byte_idx - ultima_quebra - 1
-end
+local function destacar_verbos_go(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+  if vim.bo[bufnr].filetype ~= "go" then return end
 
-local function destacar_verbos_formato(bufnr)
-  bufnr = bufnr or 0
-  vim.api.nvim_buf_clear_namespace(bufnr, ns_verbo, 0, -1)
+  vim.api.nvim_buf_clear_namespace(bufnr, go_verbs_ns, 0, -1)
 
   local ok_parser, parser = pcall(vim.treesitter.get_parser, bufnr, "go")
   if not ok_parser or not parser then return end
 
-  local ok_tree, tree = pcall(function() return parser:parse()[1] end)
-  if not ok_tree or not tree then return end
+  local ok_tree, trees = pcall(function() return parser:parse() end)
+  if not ok_tree or not trees or not trees[1] then return end
 
   local ok_query, query = pcall(vim.treesitter.query.parse, "go", [[
     [
       (interpreted_string_literal)
       (raw_string_literal)
-    ] @str
+    ] @string
   ]])
   if not ok_query then return end
 
-  for _, node in query:iter_captures(tree:root(), bufnr, 0, -1) do
-    local texto      = vim.treesitter.get_node_text(node, bufnr)
-    local srow, scol = node:start()
+  local root = trees[1]:root()
 
-    local pos = 1
-    while true do
-      local i, j = texto:find(PADRAO_VERBO, pos)
-      if not i then break end
+  for _, node in query:iter_captures(root, bufnr, 0, -1) do
+    local start_row, start_col, end_row, end_col = node:range()
 
-      local lin_i, col_i = posicao_absoluta(srow, scol, texto, i)
-      local lin_j, col_j = posicao_absoluta(srow, scol, texto, j + 1)
+    -- Só trata strings de uma linha só (cobre o caso comum de fmt.Printf)
+    if start_row == end_row then
+      local linha = vim.api.nvim_buf_get_lines(bufnr, start_row, start_row + 1, false)[1]
+      if linha then
+        local trecho = linha:sub(start_col + 1, end_col)
 
-      -- só marca verbos dentro de uma única linha (caso comum);
-      -- verbos "quebrados" por uma quebra de linha não ocorrem na prática
-      if lin_i == lin_j then
-        pcall(vim.api.nvim_buf_set_extmark, bufnr, ns_verbo, lin_i, col_i, {
-          end_col  = col_j,
-          hl_group = "MartiniVerboFormato",
-        })
+        local pos = 1
+        while true do
+          local s, e = trecho:find(PADRAO_VERBO, pos)
+          if not s then break end
+          vim.api.nvim_buf_set_extmark(bufnr, go_verbs_ns, start_row, start_col + s - 1, {
+            end_col  = start_col + e,
+            hl_group = "GoFormatVerb",
+            priority = 200,
+          })
+          pos = e + 1
+        end
+
+        pos = 1
+        while true do
+          local s, e = trecho:find(PADRAO_ESCAPE, pos)
+          if not s then break end
+          vim.api.nvim_buf_set_extmark(bufnr, go_verbs_ns, start_row, start_col + s - 1, {
+            end_col  = start_col + e,
+            hl_group = "GoEscapeSeq",
+            priority = 200,
+          })
+          pos = e + 1
+        end
       end
-
-      pos = j + 1
     end
   end
 end
 
-vim.api.nvim_create_autocmd({ "FileType" }, {
+vim.api.nvim_create_autocmd("FileType", {
   pattern  = "go",
-  callback = function(args) destacar_verbos_formato(args.buf) end,
+  callback = function(args) destacar_verbos_go(args.buf) end,
 })
 
-vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI", "InsertLeave", "BufEnter" }, {
+vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost" }, {
   pattern  = "*.go",
-  callback = function(args)
-    vim.defer_fn(function() destacar_verbos_formato(args.buf) end, 30)
-  end,
+  callback = function(args) destacar_verbos_go(args.buf) end,
 })

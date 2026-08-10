@@ -1,8 +1,12 @@
+-- =========================================================
 -- lua/martini/config/options.lua
+-- Configurações de comportamento e editor
+-- =========================================================
+
 vim.g.mapleader = " "
 
 vim.opt.number         = true
-vim.opt.relativenumber = false
+vim.opt.relativenumber = true
 vim.opt.clipboard      = "unnamedplus"
 vim.opt.tabstop        = 4
 vim.opt.shiftwidth     = 4
@@ -22,6 +26,7 @@ vim.opt.guifont        = "FiraCode Nerd Font Mono:h11"
 
 vim.o.completeopt = "menu,menuone,noselect"
 
+-- Diagnósticos
 local sev = vim.diagnostic.severity
 vim.diagnostic.config({
   severity_sort    = true,
@@ -35,5 +40,13 @@ vim.diagnostic.config({
       [sev.HINT]  = "H",
     },
   },
+  -- Mensagem inline no fim da linha (estilo Error Lens)
+  virtual_text = {
+    prefix  = "■",  -- quadrado colorido antes da mensagem
+    spacing = 2,
+    source  = false,
+    format  = function(diagnostic)
+      return diagnostic.message
+    end,
+  },
 })
-
