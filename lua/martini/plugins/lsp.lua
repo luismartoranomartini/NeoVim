@@ -23,17 +23,7 @@ if ok_cmp and ok_snip then
   end)
 
   local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
-  -- O cliente LSP do Neovim represa notificações textDocument/didChange por
-  -- 150ms por padrão (flags.debounce_text_changes). Isso faz o servidor
-  -- responder ao pedido de completion com o buffer ainda desatualizado na
-  -- primeira letra digitada, exigindo uma segunda tecla para "sincronizar".
-  -- Zerar aqui aplica-se a TODOS os servidores, pois "*" é mesclado em
-  -- cada config individual (inclusive os blocos manuais do gopls/clangd).
-  vim.lsp.config["*"] = {
-    capabilities = capabilities,
-    flags        = { debounce_text_changes = 0 },
-  }
+  vim.lsp.config["*"] = { capabilities = capabilities }
 
   cmp.setup({
     snippet = {
@@ -71,17 +61,11 @@ if ok_cmp and ok_snip then
         end
       end, { "i", "s" }),
     }),
-    sources = cmp.config.sources({
-      -- nvim_lsp e luasnip no MESMO grupo: assim os candidatos de
-      -- ambos entram na mesma disputa de pontuação de match, em
-      -- vez de o grupo do LSP suprimir o do snippet quando o gopls
-      -- devolve algum candidato para o mesmo prefixo (ex.: "wr" vs.
-      -- "http.ResponseWriter" depois que o buffer já usa o tipo).
-      { name = "nvim_lsp", priority = 900 },
-      { name = "luasnip",  priority = 1000 },
-    }, {
-      { name = "buffer" },
-    }),
+    sources = cmp.config.sources(
+      { { name = "nvim_lsp" } },
+      { { name = "luasnip"  } },
+      { { name = "buffer"   } }
+    ),
     window = {
       completion    = cmp.config.window.bordered(),
       documentation = cmp.config.window.bordered(),
@@ -102,6 +86,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
     vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
     vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename,       opts)
   end,
 })
 
@@ -172,3 +157,28 @@ do
     vim.notify("LSP não encontrado: clangd", vim.log.levels.WARN)
   end
 end
+
+-- =========================================================
+-- Comando :LspRestart
+-- Encerra todos os clients LSP anexados ao buffer atual e
+-- reabre o arquivo, forçando reanexação (útil para casos como
+-- watcher quebrado em volumes NTFS ou config recarregada).
+-- =========================================================
+vim.api.nvim_create_user_command("LspRestart", function()
+  local bufnr   = vim.api.nvim_get_current_buf()
+  local clients = vim.lsp.get_clients({ bufnr = bufnr })
+
+  if #clients == 0 then
+    vim.notify("Nenhum client LSP ativo neste buffer", vim.log.levels.WARN)
+    return
+  end
+
+  for _, client in ipairs(clients) do
+    vim.notify("Reiniciando: " .. client.name, vim.log.levels.INFO)
+    client:stop(true)
+  end
+
+  vim.defer_fn(function()
+    vim.cmd("edit")
+  end, 500)
+end, { desc = "Reinicia os clients LSP anexados ao buffer atual" })
