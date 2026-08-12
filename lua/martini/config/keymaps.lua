@@ -36,15 +36,6 @@ vim.keymap.set("n", "gf", function()
   end
 end, { desc = "Criar/Abrir arquivo sob o cursor (relativo à pasta atual)" })
 
--- Abrir URL sob o cursor com xdg-open, contornando o bug do
--- Neovim onde vim.ui.open()/vim.system() falha silenciosamente
--- com xdg-open no Linux (issue #24567). Isso corrige "gx"
--- (mapeamento nativo que chama vim.ui.open internamente).
-vim.ui.open = function(path)
-  vim.fn.jobstart({ "xdg-open", path }, { detach = true })
-  return {}
-end
-
 -- Terminal
 vim.keymap.set("t", "<Esc>",  "<C-\\><C-n>",       { desc = "Sair do modo terminal" })
 vim.keymap.set("t", "<C-w>",  "<C-\\><C-n><C-w>",  { desc = "Navegar splits de dentro do terminal" })
@@ -65,15 +56,25 @@ end
 vim.keymap.set("n", "<C-t>", toggle_terminal,         { desc = "Toggle terminal" })
 vim.keymap.set("t", "<C-t>", "<C-\\><C-n><C-w>q",    { desc = "Fechar terminal com Ctrl+t" })
 
--- Debugger
-vim.keymap.set("n", "<F5>",       function() require("dap").continue() end,          { desc = "Debug: continuar / iniciar" })
-vim.keymap.set("n", "<F10>",      function() require("dap").step_over() end,         { desc = "Debug: passo sobre (step over)" })
-vim.keymap.set("n", "<F11>",      function() require("dap").step_into() end,         { desc = "Debug: passo para dentro (step into)" })
-vim.keymap.set("n", "<F12>",      function() require("dap").step_out() end,          { desc = "Debug: passo para fora (step out)" })
-vim.keymap.set("n", "<leader>b",  function() require("dap").toggle_breakpoint() end, { desc = "Debug: breakpoint" })
-vim.keymap.set("n", "<leader>dr", function() require("dap").repl.open() end,         { desc = "Debug: abrir REPL" })
-vim.keymap.set("n", "<leader>dt", function() require("dap").terminate() end,         { desc = "Debug: encerrar sessão" })
-vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end,          { desc = "Debug: interface visual" })
+-- Debugger (carregado sob demanda: martini.plugins.debug.setup()
+-- só roda dapui/dap-go/dap-python na PRIMEIRA ação de debug,
+-- não no boot — ver comentário em plugins/debug.lua)
+local function dbg()
+  require("martini.plugins.debug").setup()
+  return require("dap")
+end
+
+vim.keymap.set("n", "<F5>",       function() dbg().continue() end,          { desc = "Debug: continuar / iniciar" })
+vim.keymap.set("n", "<F10>",      function() dbg().step_over() end,         { desc = "Debug: passo sobre (step over)" })
+vim.keymap.set("n", "<F11>",      function() dbg().step_into() end,         { desc = "Debug: passo para dentro (step into)" })
+vim.keymap.set("n", "<F12>",      function() dbg().step_out() end,          { desc = "Debug: passo para fora (step out)" })
+vim.keymap.set("n", "<leader>b",  function() dbg().toggle_breakpoint() end, { desc = "Debug: breakpoint" })
+vim.keymap.set("n", "<leader>dr", function() dbg().repl.open() end,         { desc = "Debug: abrir REPL" })
+vim.keymap.set("n", "<leader>dt", function() dbg().terminate() end,         { desc = "Debug: encerrar sessão" })
+vim.keymap.set("n", "<leader>du", function()
+  require("martini.plugins.debug").setup()
+  require("dapui").toggle()
+end, { desc = "Debug: interface visual" })
 
 -- Code runner
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })

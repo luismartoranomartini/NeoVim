@@ -36,7 +36,6 @@ local plugins = {
   "folke/tokyonight.nvim",
   "navarasu/onedark.nvim",
   "EdenEast/nightfox.nvim",
-  "folke/tokyonight.nvim",
   "nvim-treesitter/nvim-treesitter",
   "hrsh7th/nvim-cmp",
   "hrsh7th/cmp-nvim-lsp",
@@ -63,5 +62,89 @@ local plugins = {
 
 for _, repo in ipairs(plugins) do carregar_plugin(repo) end
 vim.cmd("silent! helptags ALL")
+
+-- =========================================================
+-- :MartiniUpdatePlugins
+-- Roda "git pull --ff-only" em cada plugin já clonado, em
+-- paralelo (vim.system é assíncrono). Plugins que ainda não
+-- foram baixados são ignorados aqui — abrir o Neovim já cuida
+-- disso via carregar_plugin().
+-- =========================================================
+do
+  local git_bin = vim.fn.exepath("git")
+
+  local function atualizar_plugins()
+    if git_bin == "" then
+      vim.notify("git não encontrado no PATH", vim.log.levels.ERROR)
+      return
+    end
+
+    -- Remove duplicatas da lista (ex.: repo listado duas vezes)
+    -- para não disparar dois "git pull" no mesmo diretório.
+    local vistos, alvos = {}, {}
+    for _, repo in ipairs(plugins) do
+      local nome = repo:match(".*/(.*)")
+      if not vistos[nome] then
+        vistos[nome] = true
+        local caminho = pack_path .. nome
+        if vim.fn.isdirectory(caminho .. "/.git") == 1 then
+          table.insert(alvos, { nome = nome, caminho = caminho })
+        end
+      end
+    end
+
+    local total     = #alvos
+    local pendentes = total
+    local sucesso   = 0
+    local falhas    = {}
+
+    if total == 0 then
+      vim.notify("Nenhum plugin clonado para atualizar", vim.log.levels.WARN)
+      return
+    end
+
+    vim.notify(string.format("Atualizando %d plugins...", total), vim.log.levels.INFO)
+
+    local function finalizar()
+      if #falhas == 0 then
+        vim.notify(
+          string.format("%d/%d plugins atualizados.", sucesso, total),
+          vim.log.levels.INFO
+        )
+      else
+        vim.notify(
+          string.format(
+            "%d/%d atualizados. Falharam:\n%s",
+            sucesso, total, table.concat(falhas, "\n")
+          ),
+          vim.log.levels.WARN
+        )
+      end
+    end
+
+    for _, alvo in ipairs(alvos) do
+      vim.system(
+        { git_bin, "-C", alvo.caminho, "pull", "--ff-only" },
+        { text = true },
+        function(resultado)
+          vim.schedule(function()
+            if resultado.code == 0 then
+              sucesso = sucesso + 1
+            else
+              local msg = (resultado.stderr or ""):gsub("%s+$", "")
+              table.insert(falhas, alvo.nome .. ": " .. msg)
+            end
+            pendentes = pendentes - 1
+            if pendentes == 0 then finalizar() end
+          end)
+        end
+      )
+    end
+  end
+
+  vim.api.nvim_create_user_command("MartiniUpdatePlugins", atualizar_plugins, {
+    desc = "Atualiza (git pull --ff-only) todos os plugins clonados via loader.lua",
+  })
+end
 
 return primeiro_boot
