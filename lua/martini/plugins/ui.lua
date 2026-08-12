@@ -14,12 +14,6 @@ vim.filetype.add({
   pattern = {
     -- pega nomes compostos como home.page.tmpl, layout.base.tmpl, etc.
     [".*%.tmpl"] = "html",
-    -- docker-compose.yml / compose.yaml / docker-compose.dev.yml etc.
-    -- Filetype composto "yaml.docker-compose", esperado pelo
-    -- docker-language-server (docker/docker-language-server) para
-    -- ativar os recursos específicos de Compose.
-    [".*docker%-compose.*%.ya?ml"] = "yaml.docker-compose",
-    [".*compose.*%.ya?ml"]         = "yaml.docker-compose",
   },
 })
 
@@ -34,7 +28,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 -- Treesitter
 pcall(function()
   require("nvim-treesitter.configs").setup({
-    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "dockerfile", "sql" },
+    ensure_installed = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c" },
     auto_install     = true,
     highlight        = { enable = true },
     indent           = { enable = true },
@@ -44,7 +38,7 @@ end)
 -- Força o início do Treesitter highlight ao abrir arquivos.
 -- Necessário no 0.12 onde highlight={enable=true} nem sempre dispara sozinho.
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml", "yaml.docker-compose", "dockerfile", "sql" },
+  pattern = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c" },
   callback = function(args)
     pcall(vim.treesitter.start, args.buf)
   end,
@@ -56,10 +50,7 @@ pcall(function()
 end)
 
 -- Emmet
--- "iv" = inserção + visual. O modo visual é necessário para o
--- "Wrap with Abbreviation" (selecionar texto e envolver numa tag),
--- documentado em :help emmet-wrap-with-abbreviation.
-vim.g.user_emmet_mode           = "iv"
+vim.g.user_emmet_mode           = "i"
 vim.g.user_emmet_install_global = 0
 
 vim.api.nvim_create_autocmd("FileType", {
@@ -76,7 +67,7 @@ pcall(function()
       side  = "left",
     },
     renderer = {
-      group_empty   = false,
+      group_empty   = true,
       highlight_git = true,
       icons = {
         show = {
@@ -152,12 +143,8 @@ pcall(function()
   })
 end)
 
--- Lorem Ipsum: derektata/lorem.nvim
--- :LoremIpsum words 50        → 50 palavras
--- :LoremIpsum paragraphs 3    → 3 parágrafos
--- Digitar "lorem5p" + espaço também funciona (5 parágrafos direto no texto).
+-- Surround: envolve seleções/objetos com (), {}, [], "", '', tags HTML, etc.
+-- Equivalente ao "Surround with" do VSCode.
 pcall(function()
-  require("lorem").setup({
-    sentence_length = "mixed",
-  })
+  require("nvim-surround").setup({})
 end)

@@ -4,7 +4,7 @@
 -- =========================================================
 
 -- Verifica se a posição atual tem uma abreviação Emmet válida
-local emmet_fts = { html = true, css = true, scss = true, jsx = true, tsx = true, gohtmltmpl = true }
+local emmet_fts = { html = true, css = true, scss = true, jsx = true, tsx = true, gotmpl = true }
 
 local function emmet_expandable()
   if not emmet_fts[vim.bo.filetype] then return false end
@@ -135,7 +135,7 @@ configurar_lsp("pyright", "pyright-langserver",
   { "pyproject.toml", "setup.py", "setup.cfg", ".git" })
 
 configurar_lsp("html",    "vscode-html-language-server",
-  { "html", "gohtmltmpl" },
+  { "html", "gotmpl" },
   { ".git" })
 
 configurar_lsp("cssls",   "vscode-css-language-server",

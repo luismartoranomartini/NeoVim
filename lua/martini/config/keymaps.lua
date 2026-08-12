@@ -36,6 +36,15 @@ vim.keymap.set("n", "gf", function()
   end
 end, { desc = "Criar/Abrir arquivo sob o cursor (relativo à pasta atual)" })
 
+-- Abrir URL sob o cursor com xdg-open, contornando o bug do
+-- Neovim onde vim.ui.open()/vim.system() falha silenciosamente
+-- com xdg-open no Linux (issue #24567). Isso corrige "gx"
+-- (mapeamento nativo que chama vim.ui.open internamente).
+vim.ui.open = function(path)
+  vim.fn.jobstart({ "xdg-open", path }, { detach = true })
+  return {}
+end
+
 -- Terminal
 vim.keymap.set("t", "<Esc>",  "<C-\\><C-n>",       { desc = "Sair do modo terminal" })
 vim.keymap.set("t", "<C-w>",  "<C-\\><C-n><C-w>",  { desc = "Navegar splits de dentro do terminal" })
@@ -69,6 +78,3 @@ vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end,     
 -- Code runner
 vim.keymap.set("n", "<leader>r",  ":RunCode<CR>",    { desc = "Executar arquivo atual" })
 vim.keymap.set("n", "<leader>rp", ":RunProject<CR>", { desc = "Executar projeto" })
-
--- LSP
-vim.keymap.set("n", "<leader>lr", ":LspRestart<CR>", { desc = "LSP: reiniciar clientes do buffer" })
