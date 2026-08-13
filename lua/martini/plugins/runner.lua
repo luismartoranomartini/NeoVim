@@ -33,9 +33,13 @@ pcall(function()
       go = "cd $dir && go run .",
 
       -- Compiladas: compilam em binário temporário e executam
-      c = "cd $dir && gcc $fileName -o /tmp/$fileNameWithoutExt && /tmp/$fileNameWithoutExt",
+      -- -g inclui símbolos de debug no binário — sem isso, o codelldb
+      -- roda o processo mas não consegue mapear endereço de memória
+      -- para linha de código, e os breakpoints não param em lugar
+      -- nenhum. Não afeta a execução normal via <leader>r.
+      c = "cd $dir && gcc -g $fileName -o /tmp/$fileNameWithoutExt && /tmp/$fileNameWithoutExt",
 
-      cpp = "cd $dir && g++ $fileName -o /tmp/$fileNameWithoutExt -std=c++17 && /tmp/$fileNameWithoutExt",
+      cpp = "cd $dir && g++ -g $fileName -o /tmp/$fileNameWithoutExt -std=c++17 && /tmp/$fileNameWithoutExt",
 
       rust = "cd $dir && rustc $fileName -o /tmp/$fileNameWithoutExt && /tmp/$fileNameWithoutExt",
 

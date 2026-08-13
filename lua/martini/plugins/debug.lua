@@ -1,45 +1,113 @@
 -- =========================================================
 -- lua/martini/plugins/debug.lua
 -- Debugger via nvim-dap, dap-ui, dap-go e dap-python
+--
+-- Configuração ADIADA (lazy): dapui/dap-go/dap-python só carregam na
+-- PRIMEIRA ação de debug real (F5, breakpoint, etc.), não no boot.
+-- config/keymaps.lua chama require("martini.plugins.debug").setup()
+-- antes de qualquer comando do dap — por isso este módulo PRECISA
+-- retornar uma tabela com `setup`, e não rodar tudo direto no topo
+-- do arquivo (um module sem `return` vira `true` ao dar require,
+-- e chamar .setup() nesse `true` gera "attempt to index a boolean
+-- value" — foi exatamente esse o bug corrigido aqui).
 -- =========================================================
 
-pcall(function()
-  require("dapui").setup()
-end)
+local configurado = false
 
--- Cada adaptador em seu próprio pcall: uma falha em um não pode
--- impedir os outros de registrar suas configs em dap.configurations.
-pcall(function()
-  require("dap-python").setup("python3")
-end)
+local function setup()
+  if configurado then return end
+  configurado = true
 
-pcall(function()
-  require("dap-go").setup({
-    delve = { path = vim.fn.exepath("dlv") },
-  })
-end)
+  local ok_dap, dap = pcall(require, "dap")
+  if not ok_dap then
+    vim.notify("nvim-dap não encontrado", vim.log.levels.WARN)
+    return
+  end
 
--- Interface visual: abre/fecha automaticamente com a sessão de debug
-pcall(function()
-  local dap   = require("dap")
-  local dapui = require("dapui")
-  dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open()  end
-  dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
-  dap.listeners.before.event_exited["dapui_config"]     = function() dapui.close() end
-end)
+  local ok_dapui, dapui = pcall(require, "dapui")
+  if not ok_dapui then
+    vim.notify("dap-ui não encontrado", vim.log.levels.WARN)
+    return
+  end
 
--- Sinais customizados. FICAM POR ÚLTIMO de propósito: o próprio
--- nvim-dap define seus sinais padrão (texto "B") ao ser carregado
--- via require("dap") acima — se o sign_define rodasse antes disso,
--- o nvim-dap sobrescreveria nossa definição de volta para "B".
-vim.fn.sign_define("DapBreakpoint",          { text = "●", texthl = "DapBreakpointSign" })
-vim.fn.sign_define("DapBreakpointCondition", { text = "●", texthl = "DapBreakpointSign" })
-vim.fn.sign_define("DapBreakpointRejected",  { text = "●", texthl = "DapBreakpointRejectedSign" })
-vim.fn.sign_define("DapLogPoint",            { text = "◆", texthl = "DapLogPointSign" })
-vim.fn.sign_define("DapStopped",             { text = "→", texthl = "DapStoppedSign", linehl = "DapStoppedLine" })
+  -- Signs da coluna de sinais (sem isso, o Neovim usa um placeholder
+  -- genérico — geralmente a letra do nome do sign — no lugar do ícone).
+  -- Caracteres pequenos + texthl em vez de emoji: emoji renderiza
+  -- grande/largo no terminal e não dá pra controlar o tamanho.
+  vim.fn.sign_define("DapBreakpoint",          { text = "●", texthl = "DapBreakpointHl",          linehl = "", numhl = "" })
+  vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointConditionHl", linehl = "", numhl = "" })
+  vim.fn.sign_define("DapLogPoint",            { text = "◈", texthl = "DapLogPointHl",            linehl = "", numhl = "" })
+  vim.fn.sign_define("DapStopped",             { text = "▶", texthl = "DapStoppedHl",             linehl = "DapStoppedLine", numhl = "" })
+  vim.fn.sign_define("DapBreakpointRejected",  { text = "✕", texthl = "DapBreakpointRejectedHl",  linehl = "", numhl = "" })
 
-vim.api.nvim_set_hl(0, "DapBreakpointSign",         { fg = "#ff3b5c" })
-vim.api.nvim_set_hl(0, "DapBreakpointRejectedSign", { fg = "#7a8290" })
-vim.api.nvim_set_hl(0, "DapLogPointSign",           { fg = "#4fc1ff" })
-vim.api.nvim_set_hl(0, "DapStoppedSign",            { fg = "#39ff14" })
-vim.api.nvim_set_hl(0, "DapStoppedLine",            { bg = "#1a1a1a" })
+  dapui.setup()
+
+  pcall(function() require("dap-python").setup("python3") end)
+  pcall(function()
+    require("dap-go").setup({
+      delve = {
+        path = vim.fn.exepath("dlv"),
+      },
+    })
+  end)
+
+  -- C/C++: codelldb (leve, binário único — instalado via AUR:
+  -- yay -S codelldb-bin — NÃO é um plugin Lua, então não entra no
+  -- loader.lua). Sem o binário no PATH, só avisa e segue sem quebrar
+  -- o resto do debug (Go/Python continuam funcionando).
+  local codelldb_path = vim.fn.exepath("codelldb")
+  if codelldb_path ~= "" then
+    dap.adapters.codelldb = {
+      type       = "server",
+      port       = "${port}",
+      executable = {
+        command = codelldb_path,
+        args    = { "--port", "${port}" },
+      },
+    }
+
+    -- Caminho padrão do binário sugerido bate com o runner.lua:
+    -- "gcc $fileName -o /tmp/$fileNameWithoutExt" — mesma convenção
+    -- aqui, só editável no prompt se o binário estiver em outro lugar.
+    local function config_c()
+      return {
+        {
+          name        = "Debug (codelldb)",
+          type        = "codelldb",
+          request     = "launch",
+          program     = function()
+            local sugestao = "/tmp/" .. vim.fn.expand("%:t:r")
+            return vim.fn.input("Caminho do binário compilado: ", sugestao, "file")
+          end,
+          cwd         = "${workspaceFolder}",
+          stopOnEntry = false,
+          args        = {},
+        },
+      }
+    end
+
+    dap.configurations.c   = config_c()
+    dap.configurations.cpp = config_c()
+  else
+    vim.notify(
+      "codelldb não encontrado — debug de C/C++ desativado. Instale com: yay -S codelldb-bin",
+      vim.log.levels.WARN
+    )
+  end
+
+  -- Abre a interface visual automaticamente ao iniciar o debug
+  dap.listeners.after.event_initialized["dapui_config"] = function()
+    dapui.open()
+  end
+  -- DESATIVADO TEMPORARIAMENTE para diagnóstico (breakpoint não
+  -- pausando — programa roda até o fim e a UI fecha rápido demais
+  -- pra ver o console). Reative depois removendo os comentários.
+  -- dap.listeners.before.event_terminated["dapui_config"] = function()
+  --   dapui.close()
+  -- end
+  -- dap.listeners.before.event_exited["dapui_config"] = function()
+  --   dapui.close()
+  -- end
+end
+
+return { setup = setup }
