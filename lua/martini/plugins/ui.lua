@@ -132,7 +132,20 @@ pcall(function()
 
     function FolderColorDecorator:highlight_group(node)
       if node.type ~= "directory" then return nil end
-      return pastas_coloridas[node.name]
+      -- nvim-tree junta pastas com um único filho numa linha só
+      -- (group_empty = true), então o node.name pode vir composto
+      -- (ex: "cmd/app" em vez de só "cmd"). Casa pelo primeiro
+      -- segmento antes da "/", cobrindo os dois casos.
+      -- group_empty pode juntar VÁRIOS níveis numa linha só (ex:
+      -- "012_interface/cmd/app"), e "cmd" pode acabar no meio do
+      -- nome composto, não só no início. Percorre cada segmento
+      -- separado por "/" até achar um que bata com a tabela.
+      for segmento in node.name:gmatch("[^/]+") do
+        if pastas_coloridas[segmento] then
+          return pastas_coloridas[segmento]
+        end
+      end
+      return nil
     end
   end
 
@@ -142,7 +155,7 @@ pcall(function()
       side  = "left",
     },
     renderer = {
-      group_empty   = true,
+      group_empty   = false,
       highlight_git = true,
       icons = {
         show = {

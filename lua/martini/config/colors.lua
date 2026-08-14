@@ -18,17 +18,18 @@ local function aplicar_highlights()
     roxo     = "#bd93f9",  -- booleanos, nil, builtins
     cinza    = "#7a8290",  -- comentários
     branco   = "#ffffff",  -- variáveis e texto
+    teal     = "#5ccfe6",  -- parâmetros de função
   }
 
   -- Funções e métodos → AZUL
-  hl(0, "@lsp.type.function",     { fg = cor.azul })
-  hl(0, "@lsp.type.function.go",  { fg = cor.azul })
-  hl(0, "@lsp.type.method",       { fg = cor.azul })
-  hl(0, "@lsp.type.method.go",    { fg = cor.azul })
-  hl(0, "@function.call",   { fg = cor.azul })
-  hl(0, "@method.call",     { fg = cor.azul })
-  hl(0, "@function",        { fg = cor.azul })
-  hl(0, "@function.method", { fg = cor.azul })
+  hl(0, "@lsp.type.function",     { fg = cor.azul, italic = true })
+  hl(0, "@lsp.type.function.go",  { fg = cor.azul, italic = true })
+  hl(0, "@lsp.type.method",       { fg = cor.azul, italic = true })
+  hl(0, "@lsp.type.method.go",    { fg = cor.azul, italic = true })
+  hl(0, "@function.call",   { fg = cor.azul, italic = true })
+  hl(0, "@method.call",     { fg = cor.azul, italic = true })
+  hl(0, "@function",        { fg = cor.azul, italic = true })
+  hl(0, "@function.method", { fg = cor.azul, italic = true })
 
   -- Pacotes / namespaces → CIANO
   hl(0, "@lsp.type.namespace",    { fg = cor.ciano })
@@ -46,13 +47,21 @@ local function aplicar_highlights()
 
   -- Keywords → VERMELHO
   hl(0, "@keyword",          { fg = cor.vermelho })
-  hl(0, "@keyword.function", { fg = cor.vermelho })
   hl(0, "@keyword.return",   { fg = cor.vermelho })
   hl(0, "@keyword.import",   { fg = cor.vermelho })
   hl(0, "@conditional",      { fg = cor.vermelho })
   hl(0, "@repeat",           { fg = cor.vermelho })
   hl(0, "Keyword",           { fg = cor.vermelho })
   hl(0, "Statement",         { fg = cor.vermelho })
+
+  -- Keywords de DECLARAÇÃO (func, e — via highlights.scm customizado
+  -- em after/queries/go/ — chan/map/interface/struct) → DOURADO +
+  -- ITÁLICO, separadas do resto dos keywords (if/for/return continuam
+  -- vermelho reto). @keyword.type é um grupo próprio criado no
+  -- highlights.scm justamente pra isso; sem essa definição aqui, ele
+  -- cai no fallback de @keyword (vermelho, sem itálico).
+  hl(0, "@keyword.function", { fg = cor.vermelho, italic = true })
+  hl(0, "@keyword.type",     { fg = cor.vermelho, italic = true })
 
   -- Strings → VERDE
   hl(0, "@string",         { fg = cor.verde })
@@ -93,15 +102,19 @@ local function aplicar_highlights()
   hl(0, "@comment", { fg = cor.cinza, italic = true })
   hl(0, "Comment",  { fg = cor.cinza, italic = true })
 
-  -- Variáveis e parâmetros → BRANCO
+  -- Variáveis → BRANCO
   hl(0, "@lsp.type.variable",     { fg = cor.branco })
   hl(0, "@lsp.type.variable.go",  { fg = cor.branco })
-  hl(0, "@lsp.type.parameter",    { fg = cor.branco })
-  hl(0, "@lsp.type.parameter.go", { fg = cor.branco })
   hl(0, "@variable",        { fg = cor.branco })
   hl(0, "@variable.member", { fg = cor.branco })
-  hl(0, "@parameter",       { fg = cor.branco })
   hl(0, "Identifier",       { fg = cor.branco })
+
+  -- Parâmetros de função → CORAL + ITÁLICO, separados das variáveis
+  -- comuns (antes estavam juntos em branco, sem diferenciação).
+  hl(0, "@lsp.type.parameter",    { fg = cor.teal, italic = true })
+  hl(0, "@lsp.type.parameter.go", { fg = cor.teal, italic = true })
+  hl(0, "@parameter",             { fg = cor.teal, italic = true })
+  hl(0, "@variable.parameter",    { fg = cor.teal, italic = true })
 
   -- nvim-tree: cores por nome de pasta (ver decorator customizado em
   -- plugins/ui.lua, que mapeia cada pasta a um destes grupos).
