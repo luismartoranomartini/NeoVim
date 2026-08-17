@@ -161,3 +161,4 @@ vim.api.nvim_create_autocmd("ColorScheme", { callback = aplicar_highlights })
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function() vim.defer_fn(aplicar_highlights, 300) end,
 })
+
