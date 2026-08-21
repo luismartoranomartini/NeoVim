@@ -128,7 +128,12 @@ pcall(function()
 end)
 
 -- Emmet
-vim.g.user_emmet_mode           = "i"
+-- "iv" habilita as funções de Insert (expandir abreviação com Tab) e
+-- de Visual (Ctrl+y depois , pra "wrap with abbreviation" — envolver
+-- uma seleção numa tag). Era só "i" antes, e isso desligava por
+-- completo qualquer função de modo Visual do plugin, mesmo com o
+-- <plug>(emmet-wrap-with-abbreviation) mapeado corretamente.
+vim.g.user_emmet_mode           = "iv"
 vim.g.user_emmet_install_global = 0
 vim.api.nvim_create_autocmd("FileType", {
   pattern  = { "html", "css", "scss", "jsx", "tsx" },

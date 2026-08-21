@@ -60,6 +60,13 @@ vim.keymap.set("n", "<leader>vs", function()
   vim.cmd("startinsert")
 end, { desc = "Abrir novo terminal em split vertical" })
 
+-- Emmet: envolve a seleção visual numa abreviação (ex.: selecionar duas
+-- linhas e digitar "div.card" envolve tudo numa <div class="card">).
+-- Só funciona em modo Visual ("v"), então <leader>ew aqui não colide
+-- com <leader>e (NvimTreeToggle), que só está mapeado em modo Normal.
+vim.keymap.set("v", "<leader>ew", ":EmmetWrapWithAbbreviation<CR>",
+  { desc = "Emmet: envolver seleção em abreviação" })
+
 -- Debugger (carregado sob demanda: martini.plugins.debug.setup()
 -- só roda dapui/dap-go/dap-python na PRIMEIRA ação de debug,
 -- não no boot — ver comentário em plugins/debug.lua)
