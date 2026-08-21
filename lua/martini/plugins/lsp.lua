@@ -35,18 +35,26 @@ if ok_cmp and ok_snip then
       ["<C-e>"]     = cmp.mapping.abort(),
       ["<C-d>"]     = cmp.mapping.scroll_docs(4),
       ["<C-u>"]     = cmp.mapping.scroll_docs(-4),
+      -- IMPORTANTE: emmet_expandable() é checado ANTES de cmp.visible().
+      -- Antes, se o popup do cmp estivesse aberto (comum ao digitar uma
+      -- abreviação tipo "form[action=..." — a fonte "buffer" sugere
+      -- palavras já digitadas no arquivo, tipo "action", "post"), o Tab
+      -- caía direto em cmp.select_next_item() e nunca chegava a checar
+      -- o Emmet, então a abreviação nunca expandia. Agora, se o cursor
+      -- está sobre uma abreviação Emmet válida, ela tem prioridade e o
+      -- popup do cmp é fechado antes de expandir.
       ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then
-          luasnip.expand_or_jump()
-        elseif emmet_expandable() then
-          cmp.close()
+        if emmet_expandable() then
+          if cmp.visible() then cmp.close() end
           vim.schedule(function()
             vim.fn.feedkeys(
               vim.api.nvim_replace_termcodes("<plug>(emmet-expand-abbr)", true, false, true), ""
             )
           end)
+        elseif cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
         else
           fallback()
         end

@@ -72,7 +72,18 @@ local function aplicar_highlights()
   -- do Go não marca verbos de printf como nó separado) → LARANJA,
   -- pra se destacar do verde da string normal.
   hl(0, "@string.escape",  { fg = cor.laranja })
-  hl(0, "GoFormatVerb",    { fg = cor.laranja })
+
+  -- Verbos de formatação do Go (%s, %d, %v, etc. — ver matchadd em
+  -- plugins/ui.lua, pois o Treesitter do Go não marca verbos de
+  -- printf como nó separado) → AMARELO, pra diferenciar dos escapes.
+  hl(0, "GoFormatVerb",    { fg = cor.amarelo })
+
+  -- Ações de template Go ({{ }}) dentro de arquivos .html/.tmpl → ROSA,
+  -- via matchadd em plugins/ui.lua (não existe parser Treesitter
+  -- mantido/funcional pra Go template hoje — nvim-treesitter foi
+  -- arquivado em abr/2026 — então isso é highlight aproximado, não
+  -- semântico; não confundir com autocomplete, que não existe pra isso).
+  hl(0, "GoTemplateAction", { fg = cor.rosa, bold = true })
 
   -- IMPORTANTE: limpa o override do gopls (semantic tokens), que
   -- achata a string inteira numa cor só e esconde o highlight de
@@ -161,4 +172,3 @@ vim.api.nvim_create_autocmd("ColorScheme", { callback = aplicar_highlights })
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function() vim.defer_fn(aplicar_highlights, 300) end,
 })
-

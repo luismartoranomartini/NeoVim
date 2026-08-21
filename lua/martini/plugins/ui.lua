@@ -28,6 +28,11 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 -- Agora install() baixa e compila os parsers (idempotente — não reinstala
 -- se já presentes), e o highlight é ativado manualmente por buffer via
 -- vim.treesitter.start() no autocmd FileType logo abaixo.
+--
+-- NOTA (abr/2026): o repositório nvim-treesitter/nvim-treesitter foi
+-- arquivado pelo dono. A branch "main" que usamos aqui continua
+-- funcionando normalmente (arquivado ≠ apagado), só não recebe mais
+-- atualizações nem parsers novos. Sem ação necessária agora.
 local ts_langs = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml" }
 
 pcall(function()
@@ -58,16 +63,57 @@ vim.api.nvim_create_autocmd("FileType", {
 -- IMPORTANTE #2: o padrão começa com UM único "%", não "%%" — verbos
 -- de printf no Go usam um só (%s, %d, %v), então "%%" no início do
 -- regex nunca dava match em nada (exigia dois "%" seguidos no texto).
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "go",
-  callback = function()
-    vim.fn.matchadd("GoFormatVerb", [=[%[-+ #0]*[0-9]*\.\?[0-9]*[sdvTqxXobeEfFgGpc]]=])
-  end,
+--
+-- IMPORTANTE #3: matchadd() é POR JANELA, não por buffer. Só disparar
+-- no autocmd FileType não é suficiente — FileType só dispara quando o
+-- filetype do buffer é definido pela primeira vez. Se o mesmo arquivo
+-- é aberto numa aba/split nova (via gd, :tabedit, etc.), essa janela
+-- nova nunca recebe o matchadd, mesmo com o highlight já ativo em
+-- outra janela do mesmo buffer. Por isso também dispara em BufWinEnter
+-- e WinEnter, com uma flag por janela (vim.w) pra não empilhar
+-- matches repetidos toda vez que você troca de janela.
+local function destacar_verbos_go()
+  if vim.bo.filetype ~= "go" then return end
+  if vim.w.martini_go_verb_hl then return end
+  vim.fn.matchadd("GoFormatVerb", [=[%[-+ #0]*[0-9]*\.\?[0-9]*[sdvTqxXobeEfFgGpc]]=])
+  vim.w.martini_go_verb_hl = true
+end
+
+vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter", "WinEnter" }, {
+  callback = destacar_verbos_go,
+})
+
+-- Destaque aproximado dos blocos {{ ... }} de template Go dentro de
+-- arquivos HTML — via matchadd, pois não existe parser Treesitter
+-- mantido e funcional pra essa sintaxe hoje (o parser de terceiros
+-- exige setup frágil e mesmo assim não recupera highlight de HTML
+-- dentro do bloco). Não dá autocomplete — só contraste visual.
+-- \_. casa qualquer caractere incluindo quebra de linha, .\{-} é
+-- non-greedy — cobre blocos multi-linha como {{if eq len(x) 0}} ...{{end}}.
+-- Mesmo caveat do bloco acima: matchadd() é por janela, então também
+-- dispara em BufWinEnter/WinEnter, não só FileType.
+local function destacar_template_go()
+  if vim.bo.filetype ~= "html" then return end
+  if vim.w.martini_go_tmpl_hl then return end
+  vim.fn.matchadd("GoTemplateAction", [=[{{-\?\_.\{-}-\?}}]=])
+  vim.w.martini_go_tmpl_hl = true
+end
+
+vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter", "WinEnter" }, {
+  callback = destacar_template_go,
 })
 
 -- Autopairs
 pcall(function()
   require("nvim-autopairs").setup({ check_ts = true })
+end)
+
+-- Autotag — fecha/renomeia/atualiza tags HTML/JSX automaticamente
+-- conforme digita, usando o Treesitter pra saber onde a tag termina
+-- (ex.: digitar <form> já insere </form> com o cursor entre as duas;
+-- renomear a tag de abertura atualiza a de fechamento junto).
+pcall(function()
+  require("nvim-ts-autotag").setup()
 end)
 
 -- Surround — seleciona/adiciona/troca delimitadores ("", '', (), [], {}, <>)
@@ -97,7 +143,7 @@ pcall(function()
       side  = "left",
     },
     renderer = {
-      group_empty   = true,
+      group_empty   = false,
       highlight_git = true,
       icons = {
         show = {

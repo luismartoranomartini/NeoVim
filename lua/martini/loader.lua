@@ -44,6 +44,7 @@ local plugins = {
   "saadparwaiz1/cmp_luasnip",
   "rafamadriz/friendly-snippets",
   "windwp/nvim-autopairs",
+  "windwp/nvim-ts-autotag",
   "stevearc/conform.nvim",
   "mfussenegger/nvim-lint",
   "mfussenegger/nvim-dap",
