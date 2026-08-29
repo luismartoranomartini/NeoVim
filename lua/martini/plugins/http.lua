@@ -13,7 +13,7 @@ vim.filetype.add({
 })
 
 -- PERF: kulala's setup() only runs the first time an .http/.rest buffer
--- is opened or an <leader>R keymap is used, instead of on every boot.
+-- is opened or an <leader>h keymap is used, instead of on every boot.
 local kulala_ready = false
 
 local function setup_kulala()
@@ -53,41 +53,41 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- =========================================================
--- Keymaps (prefix <leader>R for "Request")
+-- Keymaps (prefix <leader>h for "HTTP" — renamed from <leader>R (ago/2026, uppercase removal))
 -- =========================================================
 local map = vim.keymap.set
 
-map("n", "<leader>Rs", function()
+map("n", "<leader>hs", function()
   setup_kulala()
   require("kulala").run()
 end, { desc = "HTTP: send request under cursor" })
 
-map("n", "<leader>Ra", function()
+map("n", "<leader>ha", function()
   setup_kulala()
   require("kulala").run_all()
 end, { desc = "HTTP: send all requests in file" })
 
-map("n", "<leader>Rb", function()
+map("n", "<leader>hb", function()
   setup_kulala()
   require("kulala").scratchpad()
 end, { desc = "HTTP: open scratchpad" })
 
-map("n", "<leader>Rc", function()
+map("n", "<leader>hc", function()
   setup_kulala()
   require("kulala").copy()
 end, { desc = "HTTP: copy request as curl command" })
 
-map("n", "<leader>Rn", function()
+map("n", "<leader>hn", function()
   setup_kulala()
   require("kulala").jump_next()
 end, { desc = "HTTP: next request" })
 
-map("n", "<leader>Rp", function()
+map("n", "<leader>hp", function()
   setup_kulala()
   require("kulala").jump_prev()
 end, { desc = "HTTP: previous request" })
 
-map("n", "<leader>Rq", function()
+map("n", "<leader>hq", function()
   setup_kulala()
   require("kulala").close()
 end, { desc = "HTTP: close response window" })

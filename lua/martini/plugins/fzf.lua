@@ -54,5 +54,7 @@ map("n", "<leader>fd", function() require("fzf-lua").lsp_definitions() end,
 map("n", "<leader>fs", function() require("fzf-lua").lsp_document_symbols() end,
   { desc = "Fzf: símbolos do arquivo (LSP)" })
 
-map("n", "<leader>fR", function() require("fzf-lua").lsp_references() end,
-  { desc = "Fzf: referências (LSP)" })
+-- RENOMEADO (ago/2026, remoção de maiúsculas): era <leader>fR.
+-- "u" de "usages" ("find usages", termo padrão de IDEs pra referências).
+map("n", "<leader>fu", function() require("fzf-lua").lsp_references() end,
+  { desc = "Fzf: referências / usages (LSP)" })

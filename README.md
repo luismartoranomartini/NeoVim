@@ -62,7 +62,11 @@ Ao adicionar uma nova linguagem (TypeScript, Rust, etc.), o padrão é criar
 
 ## Atalhos
 
-`<leader>` = `Espaço`.
+`<leader>` = `Espaço`. Gramática: `<leader>` + **domínio** (1ª letra) +
+**verbo** (2ª letra) — ver o comentário completo em `config/keymaps.lua`
+pra regras de desambiguação. **Maiúsculas evitadas ao máximo** (ago/2026):
+onde antes um domínio ou uma ação usava Shift, foi trocado por uma letra
+minúscula com mnemônica própria.
 
 | Prefixo | Domínio |
 |---|---|
@@ -70,9 +74,9 @@ Ao adicionar uma nova linguagem (TypeScript, Rust, etc.), o padrão é criar
 | `<leader>d` | Debug |
 | `<leader>f` | Find (fzf-lua) + arquivo |
 | `<leader>g` | Go |
+| `<leader>h` | HTTP requests (kulala) |
 | `<leader>m` | Multicursor |
 | `<leader>r` | Run (code_runner) |
-| `<leader>R` | HTTP requests (kulala) |
 
 ### Geral
 
@@ -81,9 +85,10 @@ Ao adicionar uma nova linguagem (TypeScript, Rust, etc.), o padrão é criar
 | `<leader>n` | Nova aba |
 | `<leader>e` | Toggle explorador (nvim-tree) |
 | `<leader>w` | Fecha a aba atual |
-| `<leader>bd` / `<leader>bD` | Fecha buffer / fecha buffer forçado |
+| `<leader>bd` / `<leader>bx` | Fecha buffer / fecha buffer forçado |
 | `gf` | Cria/abre o arquivo sob o cursor (relativo à pasta atual) |
 | `<leader>fn` | Cria arquivo novo via prompt (com `mkdir -p`) |
+| `<leader>fu` | Referências / usages do símbolo (LSP, via fzf-lua) |
 | `<leader>t` / `<leader>vs` | Terminal horizontal / vertical |
 | `Ctrl-t` | Toggle terminal |
 
@@ -95,18 +100,26 @@ Ao adicionar uma nova linguagem (TypeScript, Rust, etc.), o padrão é criar
 ### Debug
 
 `F5`/`F10`/`F11`/`F12` (convenção universal de debugger) + aliases
-`<leader>dc`/`do`/`di`/`dO`. Mais: `<leader>db` breakpoint, `<leader>dr` REPL,
-`<leader>dt` terminar sessão, `<leader>du` toggle dap-ui.
+`<leader>dc`/`do`/`di`/`dk`. `dk` = step out (ver nota no `keymaps.lua`
+sobre a escolha da letra). Mais: `<leader>db` breakpoint, `<leader>dr`
+REPL, `<leader>dt` terminar sessão, `<leader>du` toggle dap-ui.
 
 ### Go
 
-`<leader>gt` testa o pacote atual · `<leader>gT` testa o projeto inteiro ·
-`<leader>gr` testa só a função sob o cursor.
+`<leader>gt` testa o pacote atual · `<leader>ga` testa o projeto inteiro
+("a" de "all") · `<leader>gr` testa só a função sob o cursor.
 
-### HTTP, Find, Multicursor
+### HTTP (`<leader>h`, renomeado de `<leader>R`)
 
-Inalterados na reestruturação — ver `plugins/http.lua`, `plugins/fzf.lua`,
-`plugins/multicursor.lua` pra lista completa e atualizada de cada um.
+`hs` enviar requisição · `ha` enviar todas · `hb` scratchpad · `hc` copiar
+como curl · `hn`/`hp` próxima/anterior · `hq` fechar janela de resposta.
+
+### Find (fzf-lua) e Multicursor
+
+`fR`→`fu` no fzf-lua (referências/usages). No multicursor, três
+maiúsculas passaram batido na primeira rodada e foram corrigidas depois:
+`mA`→`ma`, `mN`→`mp`, `mS`→`msp`. Ver `plugins/fzf.lua` e
+`plugins/multicursor.lua` pra lista completa.
 
 ## Plugins gerenciados por `loader.lua`
 
@@ -130,3 +143,4 @@ Este README já reflete só o que existe de fato no código pós-reestruração.
 Se você quiser essas três funcionalidades implementadas de verdade (elas
 são melhorias reais — `goto_prev`/`goto_next` estão depreciadas desde o
 Neovim 0.11), é só pedir.
+

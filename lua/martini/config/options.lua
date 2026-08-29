@@ -31,6 +31,15 @@ vim.o.completeopt = "menu,menuone,noselect"
 -- dentro do modo Terminal ("t"). Não altera o cursor nos outros modos.
 vim.opt.guicursor:append("t:ver25")
 
+-- Fold baseado em Treesitter — recolher/expandir funções e blocos com
+-- za (alterna) / zc (fecha) / zo (abre) / zR (abre tudo) / zM (fecha tudo).
+-- Funciona pra qualquer linguagem com parser Treesitter instalado (Go,
+-- JS, Python, etc.), sem precisar de plugin extra.
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr   = "v:lua.vim.treesitter.foldexpr()"
+vim.opt.foldlevel  = 99  -- abre tudo por padrão ao abrir o arquivo — sem
+                         -- isso o Neovim abre o arquivo com tudo recolhido.
+
 -- Quebra de linha AUTOMÁTICA (hard wrap) ao ultrapassar textwidth (100),
 -- restrita a arquivos de TEXTO/PROSA — markdown, mensagens de commit,
 -- texto puro, reStructuredText, AsciiDoc, LaTeX. A flag "t" do

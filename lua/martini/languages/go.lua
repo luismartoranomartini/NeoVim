@@ -6,7 +6,7 @@
 --                         de printf e de ações de template
 --   plugins/format.lua → golangci-lint, organize imports
 --   plugins/runner.lua → entrada "go" da tabela de filetypes + os
---                         atalhos <leader>gt/<leader>gT/<leader>tf
+--                         atalhos <leader>gt/<leader>ga/<leader>gr
 --   plugins/debug.lua  → setup do dap-go
 --
 -- Interface deste módulo, consumida por outros arquivos:
@@ -180,9 +180,12 @@ M.runner_filetypes = {
 -- Testes: atalhos sob o prefixo <leader>g (reservado pra Go nesta
 -- reestruturação — ver comentário em config/keymaps.lua).
 --
--- RENOMEADO: <leader>tf → <leader>gr ("go run this test"). O nome
--- antigo (<leader>tf) não colidia com nada, mas ficava fora do
--- namespace de Go junto com gt/gT — agora os três vivem sob <leader>g.
+-- RENOMEADO (ago/2026, duas rodadas):
+--   1) <leader>tf → <leader>gr ("go run this test") — pra viver no
+--      mesmo namespace de gt/gT em vez de ficar solto fora dele.
+--   2) <leader>gT → <leader>ga ("test all") — remoção de maiúsculas
+--      dos atalhos <leader>: "a" de "all" substitui o T maiúsculo,
+--      mantendo o mesmo sentido de "escopo maior que gt".
 -- =========================================================
 
 -- <leader>gt : testa o pacote do arquivo atual (verbose)
@@ -191,8 +194,8 @@ vim.keymap.set("n", "<leader>gt", function()
   vim.cmd("botright split | resize 15 | terminal cd " .. vim.fn.fnameescape(dir) .. " && go test -v")
 end, { desc = "Go: testar pacote atual" })
 
--- <leader>gT : testa o projeto inteiro
-vim.keymap.set("n", "<leader>gT", function()
+-- <leader>ga : testa o projeto inteiro ("a" de "all")
+vim.keymap.set("n", "<leader>ga", function()
   vim.cmd("botright split | resize 15 | terminal go test ./...")
 end, { desc = "Go: testar projeto inteiro" })
 

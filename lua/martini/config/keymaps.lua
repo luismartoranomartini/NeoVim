@@ -2,36 +2,64 @@
 -- lua/martini/config/keymaps.lua
 -- Atalhos globais de teclado
 --
--- REESTRUTURAÇÃO (ago/2026) — prefixos semânticos por grupo:
---   <leader>b  → buffers        (bd, bD)
---   <leader>d  → debug          (db, dc, do, di, dO, dr, dt, du)
---   <leader>f  → find/arquivos  (já era do fzf-lua: ff/fg/fb/fh/fw/fr/fd/fs/fR
---                                 + fn, novo, "criar arquivo")
---   <leader>g  → Go             (gt, gT, gr — ver languages/go.lua)
---   <leader>m  → multicursor    (já existia, inalterado)
---   <leader>r  → run/executar   (r, rp — code_runner)
---   <leader>R  → HTTP/requests  (já existia, inalterado — Rs/Ra/Rb/Rc/Rn/Rp/Rq)
+-- GRAMÁTICA (formalizada em ago/2026, depois da reestruturação):
 --
--- DECISÕES DELIBERADAS que se afastam da sugestão original de reorganização:
+--   <leader> + [DOMÍNIO] + [VERBO]
 --
--- 1) gd / K / [d / ]d (LSP) NÃO viraram <leader>l*. São convenção universal
---    do ecossistema Neovim (literalmente o exemplo oficial de :h lsp-quickstart
---    e o que toda config baseada em nvim-lspconfig usa) — trocar isso quebraria
---    a compatibilidade com qualquer material de aprendizado de LSP no Neovim.
+-- O Vim nativo compõe operador+motion livremente (dw, d$, ciw, yiw...)
+-- porque motions/text-objects são um conjunto pequeno reaproveitado por
+-- qualquer operador. Nossos atalhos <leader> NÃO são componíveis desse
+-- jeito — cada um é um comando fechado, não uma peça combinável. O que
+-- adotamos em vez disso é uma CONVENÇÃO MNEMÔNICA de duas posições:
 --
--- 2) <leader>t continua uma tecla ÚNICA e completa (abre terminal horizontal),
---    NÃO virou um prefixo de grupo (ex.: <leader>tt). Já foi tentado quando o
---    terminal vertical existia como <leader>tv: o Neovim, ao ver <leader>t já
---    mapeado como comando completo, dispara <leader>t IMEDIATAMENTE ao digitar
---    o "t" (sem esperar o timeoutlen), e o "v" seguinte vira texto literal
---    dentro do terminal recém-aberto. Por isso o terminal vertical é
---    <leader>vs (tecla própria, fora do namespace de <leader>t) — ver
---    utils/terminal.lua.
+--   1ª letra depois do <leader> = DOMÍNIO (o quê)
+--   2ª letra                    = VERBO   (a ação dentro do domínio)
 --
--- 3) <leader>w continua "fechar aba" (não é a motion nativa `w`, é
---    <leader>w — não há conflito real com "avançar palavra"; a crítica de
---    que isso sobrescreve uma motion fundamental do Vim não se aplica aqui,
---    pois o mapeamento sempre teve o prefixo leader).
+--   b → buffers          f → find/arquivos (fzf-lua)
+--   m → multicursor       g → Go
+--   d → debug             r → run (code_runner)
+--   h → HTTP (kulala)
+--
+-- REGRAS DE DESAMBIGUAÇÃO:
+--
+-- 1) MAIÚSCULAS EVITADAS AO MÁXIMO (ago/2026). Onde antes usávamos
+--    maiúscula pra indicar "escopo maior" (bD, dO, gT) ou pra separar
+--    um domínio inteiro (R de HTTP), trocamos por uma letra minúscula
+--    com mnemônica própria — ver tabela de renomeações no fim deste
+--    comentário. Motivo: maiúscula/minúscula no mesmo par de teclas
+--    (ex.: "o" e "O" lado a lado) é fácil de errar sob pressão, e
+--    Shift some com a vantagem de "uma tecla só" que o resto da
+--    convenção tenta manter.
+--
+-- 2) Dentro do domínio "debug", o verbo é literal e direto:
+--      db = breakpoint · dc = continue · do = step over ·
+--      di = step into  · dk = step out (ver nota abaixo) ·
+--      dr = repl · dt = terminate · du = dap-ui
+--
+--    NOTA sobre "dk" (step out): não é "step out" por nenhuma letra
+--    óbvia sem repetir "o" de "over" — "k" foi escolhido por analogia
+--    de movimento (k = pra cima em qualquer motion do Vim, e "sair de
+--    uma função" sobe um nível na pilha de chamadas, i.e., "vai pra
+--    cima"). Documentado aqui porque não é auto-evidente sozinho.
+--
+-- 3) A letra "n" é reaproveitada com dois sentidos DIFERENTES conforme
+--    o domínio — "novo" em <leader>n/<leader>fn, "next/próximo" em
+--    <leader>mn/<leader>hn. Intencional: o domínio (1ª letra) já
+--    desambigua ao digitar; só precisa ficar documentado pra não
+--    parecer inconsistência ao ler a lista fora de contexto.
+--
+-- 4) gd/K/[d/]d (LSP) ficam FORA dessa gramática de propósito — são
+--    convenção universal do ecossistema Neovim, não nossa (ver
+--    plugins/lsp.lua).
+--
+-- RENOMEAÇÕES feitas ao remover maiúsculas (ago/2026):
+--   <leader>bD → <leader>bx   (x = forçar, mesmo verbo de <leader>mx)
+--   <leader>dO → <leader>dk   (ver nota 2 acima)
+--   <leader>gT → <leader>ga   (a = "all"; ver languages/go.lua)
+--   <leader>R* → <leader>h*   (domínio HTTP inteiro, era maiúsculo só
+--                              pra não colidir com <leader>r; ver
+--                              plugins/http.lua)
+--   <leader>fR → <leader>fu   (u = "usages"; ver plugins/fzf.lua)
 -- =========================================================
 
 local path     = require("martini.utils.path")
@@ -46,15 +74,14 @@ vim.keymap.set("n", "<leader>w", ":tabclose<CR>", { desc = "Fechar aba atual" })
 vim.keymap.set("n", "gf", path.goto_or_create,
   { desc = "Criar/Abrir arquivo sob o cursor (relativo à pasta atual)" })
 
--- NOVO: comando explícito de "novo arquivo", separado do gf — pedido pela
--- reestruturação (gf deveria continuar semanticamente "go to file", sem
--- acumular responsabilidade de criação via prompt). Agrupado sob <leader>f
--- porque já é o namespace de operações de arquivo do fzf-lua.
+-- Comando explícito de "novo arquivo", separado do gf (que continua
+-- semanticamente "go to file"). Agrupado sob <leader>f porque já é o
+-- namespace de operações de arquivo do fzf-lua.
 vim.keymap.set("n", "<leader>fn", path.new_file, { desc = "Find: novo arquivo (com mkdir -p)" })
 
 -- ── Buffers ───────────────────────────────────────────────
 vim.keymap.set("n", "<leader>bd", ":bd<CR>",  { desc = "Fechar buffer" })
-vim.keymap.set("n", "<leader>bD", ":bd!<CR>", { desc = "Fechar buffer (forçado)" })
+vim.keymap.set("n", "<leader>bx", ":bd!<CR>", { desc = "Fechar buffer (forçado)" })
 
 -- ── Terminal ──────────────────────────────────────────────
 vim.keymap.set("n", "<leader>t", terminal.open_horizontal, { desc = "Abrir terminal (split horizontal)" })
@@ -87,7 +114,7 @@ vim.keymap.set("n", "<leader>db", function() dbg().toggle_breakpoint() end, { de
 vim.keymap.set("n", "<leader>dc", function() dbg().continue() end,         { desc = "Debug: continuar / iniciar" })
 vim.keymap.set("n", "<leader>do", function() dbg().step_over() end,        { desc = "Debug: passo sobre" })
 vim.keymap.set("n", "<leader>di", function() dbg().step_into() end,        { desc = "Debug: passo para dentro" })
-vim.keymap.set("n", "<leader>dO", function() dbg().step_out() end,         { desc = "Debug: passo para fora" })
+vim.keymap.set("n", "<leader>dk", function() dbg().step_out() end,         { desc = "Debug: passo para fora" })
 vim.keymap.set("n", "<leader>dr", function() dbg().repl.open() end,        { desc = "Debug: abrir REPL" })
 vim.keymap.set("n", "<leader>dt", function() dbg().terminate() end,        { desc = "Debug: encerrar sessão" })
 vim.keymap.set("n", "<leader>du", function()

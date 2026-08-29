@@ -104,6 +104,29 @@ me mande o trecho que eu incluo.
 5. `:checkhealth` e abra um arquivo `.go` pra confirmar LSP, Treesitter,
    highlight de verbos (`%s`, `%d`) e `<leader>gt`/`<leader>gr` funcionando.
 
+## Adendo (ago/2026) — remoção de maiúsculas dos atalhos `<leader>`
+
+Depois da entrega inicial, formalizamos a gramática de atalhos
+(`<leader>` + domínio + verbo, documentada no cabeçalho de
+`config/keymaps.lua`) e removemos toda maiúscula de atalho `<leader>`,
+por risco de erro sob pressão (letras visualmente quase idênticas, tipo
+`o`/`O`). Renomeações:
+
+| Antes | Depois | Onde |
+|---|---|---|
+| `<leader>bD` | `<leader>bx` | `config/keymaps.lua` |
+| `<leader>dO` | `<leader>dk` | `config/keymaps.lua` |
+| `<leader>gT` | `<leader>ga` | `languages/go.lua` |
+| `<leader>R*` (domínio inteiro) | `<leader>h*` | `plugins/http.lua` |
+| `<leader>fR` | `<leader>fu` | `plugins/fzf.lua` |
+| `<leader>mA` | `<leader>ma` | `plugins/multicursor.lua` (pego numa auditoria posterior — passou batido na primeira rodada) |
+| `<leader>mN` | `<leader>mp` | `plugins/multicursor.lua` (idem) |
+| `<leader>mS` | `<leader>msp` | `plugins/multicursor.lua` (idem — 3 letras, pois "mp" já estava ocupado) |
+
+Se você já tinha memorizado os nomes antigos, os únicos que mudam de
+verdade na prática do dia a dia são `bD`, `dO`, `gT`, todo o grupo HTTP
+(`R*`→`h*`), e `fR`.
+
 ## Divergência encontrada (fyi)
 
 O snapshot de arquivos que eu tinha no projeto (upload anterior) estava
@@ -113,3 +136,4 @@ haviam commitado (nvim-surround, autotag, decorator de pastas do
 nvim-tree, dap-go lazy, codelldb, etc.) e que o snapshot não refletia.
 Usei o conteúdo real do GitHub como fonte de verdade para toda a
 reestrutura.
+

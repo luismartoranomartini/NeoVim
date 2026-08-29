@@ -14,12 +14,19 @@ local ok, erro = pcall(function()
   map({ "n", "x" }, "<leader>mk", function() mc.lineSkipCursor(-1) end, { desc = "Multicursor: pular linha acima" })
   -- Adiciona cursor na proxima/anterior ocorrencia da palavra sob o cursor
   -- (ou da selecao, em modo visual)
+  -- RENOMEADO (ago/2026, remoção de maiúsculas): mN -> mp ("previous")
   map({ "n", "x" }, "<leader>mn", function() mc.matchAddCursor(1)  end, { desc = "Multicursor: proxima ocorrencia" })
-  map({ "n", "x" }, "<leader>mN", function() mc.matchAddCursor(-1) end, { desc = "Multicursor: ocorrencia anterior" })
+  map({ "n", "x" }, "<leader>mp", function() mc.matchAddCursor(-1) end, { desc = "Multicursor: ocorrencia anterior" })
   map({ "n", "x" }, "<leader>ms", function() mc.matchSkipCursor(1)  end, { desc = "Multicursor: pular proxima ocorrencia" })
-  map({ "n", "x" }, "<leader>mS", function() mc.matchSkipCursor(-1) end, { desc = "Multicursor: pular ocorrencia anterior" })
+  -- RENOMEADO (ago/2026, remoção de maiúsculas): mS -> msp ("skip previous").
+  -- Três letras aqui em vez de duas: "mp" já está ocupado por "ocorrência
+  -- anterior" (add), então "pular a anterior" (skip) precisa de uma
+  -- combinação própria — msp = ms (skip) + p (previous).
+  map({ "n", "x" }, "<leader>msp", function() mc.matchSkipCursor(-1) end, { desc = "Multicursor: pular ocorrencia anterior" })
   -- Adiciona cursor em TODAS as ocorrencias do documento de uma vez
-  map({ "n", "x" }, "<leader>mA", mc.matchAllAddCursors, { desc = "Multicursor: selecionar todas ocorrencias" })
+  -- RENOMEADO (ago/2026, remoção de maiúsculas): mA -> ma ("all",
+  -- mesmo padrão de <leader>ga em languages/go.lua)
+  map({ "n", "x" }, "<leader>ma", mc.matchAllAddCursors, { desc = "Multicursor: selecionar todas ocorrencias" })
   -- Alterna qual cursor e o "principal" (util pra revisar edicoes)
   map({ "n", "x" }, "<leader>mh", mc.prevCursor, { desc = "Multicursor: cursor principal anterior" })
   map({ "n", "x" }, "<leader>ml", mc.nextCursor, { desc = "Multicursor: proximo cursor principal" })
@@ -61,3 +68,4 @@ end)
 if not ok then
   vim.notify("multicursor.lua ERRO: " .. tostring(erro), vim.log.levels.ERROR)
 end
+
