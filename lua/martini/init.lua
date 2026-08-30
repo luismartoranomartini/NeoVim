@@ -1,17 +1,7 @@
 -- =========================================================
+-- TARGET: Neovim 0.12 · Arch Linux
 -- lua/martini/init.lua
--- Ponto de entrada real da configuração martini.
---
--- Ordem de carregamento (importa por causa de dependências):
---   1. patch de compatibilidade do Neovim 0.12.2
---   2. loader (git clone dos plugins) + boot guard
---   3. config/      → comportamento e aparência do PRÓPRIO Neovim
---   4. languages/    → tudo que é específico de uma linguagem (Go, etc.)
---   5. plugins/      → configuração de cada plugin de terceiros
---
--- languages/ carrega ANTES de plugins/ porque martini.languages.go
--- registra vim.filetype.add() para *.tmpl/*.gohtml, e o LSP de HTML
--- (plugins/lsp.lua) referencia o filetype "gotmpl" resultante.
+-- Bootstrap: patch 0.12.2 + loader de plugins + ordem de carregamento
 -- =========================================================
 
 -- =========================================================
@@ -49,8 +39,18 @@ if primeiro_boot then
 end
 
 -- =========================================================
--- CONFIG → LANGUAGES → PLUGINS
+-- CONFIG — comportamento, aparência e atalhos
 -- =========================================================
-require("martini.config")
-require("martini.languages")
+require("martini.config.options")
+require("martini.config.colors")
+require("martini.config.keymaps")
+require("martini.config.dashboard")
+
+-- =========================================================
+-- PLUGINS — configuração de cada plugin
+-- Delegado a plugins/init.lua (já existia, correto, mas nunca era
+-- chamado — causa raiz do erro "module 'martini.plugins.ui' not
+-- found"). UM único require aqui evita duplicar/divergir a lista
+-- de plugins em dois arquivos.
+-- =========================================================
 require("martini.plugins")

@@ -13,15 +13,21 @@
 -- =========================================================
 
 -- ── Keymaps LSP (ativados ao conectar) ───────────────────
--- DELIBERADAMENTE mantidos sem prefixo <leader> — gd/K/[d/]d são a
--- convenção universal do ecossistema Neovim (ver :h lsp-quickstart).
+-- gd/K/[d/]d DELIBERADAMENTE mantidos sem prefixo <leader> — convenção
+-- universal do ecossistema Neovim (ver :h lsp-quickstart).
+--
+-- Rename NÃO usa domínio novo (<leader>l): o README define domínios
+-- fixos (b/d/f/g/h/m/r) e <leader>f já hospeda ações LSP via fzf-lua
+-- (ex.: <leader>fu = usages/referências). <leader>fr segue a mesma
+-- convenção — evita criar um domínio de propósito único.
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(args)
     local opts = { buffer = args.buf, silent = true }
-    vim.keymap.set("n", "gd", vim.lsp.buf.definition,  opts)
-    vim.keymap.set("n", "K",  vim.lsp.buf.hover,        opts)
-    vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-    vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "gd",         vim.lsp.buf.definition,  opts)
+    vim.keymap.set("n", "K",          vim.lsp.buf.hover,        opts)
+    vim.keymap.set("n", "[d",         vim.diagnostic.goto_prev, opts)
+    vim.keymap.set("n", "]d",         vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "<leader>fr", vim.lsp.buf.rename,       opts)
   end,
 })
 

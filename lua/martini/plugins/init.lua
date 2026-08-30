@@ -6,6 +6,7 @@
 -- =========================================================
 
 require("martini.plugins.treesitter")
+require("martini.plugins.textobjects") -- depende dos parsers registrados acima
 require("martini.plugins.editing")
 require("martini.plugins.nvim-tree")
 require("martini.plugins.bufferline")
