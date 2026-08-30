@@ -3,9 +3,7 @@
 -- Configurações de comportamento e editor (puro vim.opt/vim.g)
 -- Diagnósticos ficaram em config/diagnostics.lua.
 -- =========================================================
-
 vim.g.mapleader = " "
-
 vim.opt.number         = true
 vim.opt.relativenumber = false
 vim.opt.clipboard      = "unnamedplus"
@@ -24,7 +22,6 @@ vim.opt.swapfile       = false
 vim.opt.backup         = false
 vim.opt.writebackup    = false
 vim.opt.guifont        = "FiraCode Nerd Font Mono:h11"
-
 vim.o.completeopt = "menu,menuone,noselect"
 
 -- Cursor em formato de barra vertical (em vez do bloco padrão) apenas
@@ -39,6 +36,31 @@ vim.opt.foldmethod = "expr"
 vim.opt.foldexpr   = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.foldlevel  = 99  -- abre tudo por padrão ao abrir o arquivo — sem
                          -- isso o Neovim abre o arquivo com tudo recolhido.
+
+-- Busca de arquivo/texto nativa (:find / :grep), usada pelos atalhos
+-- <leader>ff e <leader>fg em config/keymaps.lua. Substituem o fzf-lua
+-- (removido em ago/2026 — ver nota de remoção em keymaps.lua).
+--
+-- "**" faz :find buscar recursivamente a partir do diretório de trabalho
+-- atual, não só na pasta do arquivo aberto.
+vim.opt.path:append("**")
+
+-- Ignora essas pastas tanto na busca de :find quanto no wildmenu de
+-- autocomplete de caminho (:e <Tab>, por exemplo).
+vim.opt.wildignore:append({
+  "*/node_modules/*",
+  "*/.git/*",
+  "*/vendor/*",  -- pasta padrão de dependências vendored do Go
+})
+
+-- :grep usa ripgrep se disponível no PATH (muito mais rápido que o
+-- grep interno do Vim, que lê arquivo por arquivo em Vimscript).
+-- Populamos a quickfix list automaticamente, sem preview visual —
+-- é essa a troca consciente ao abandonar o fzf-lua.
+if vim.fn.executable("rg") == 1 then
+  vim.opt.grepprg    = "rg --vimgrep --smart-case"
+  vim.opt.grepformat = "%f:%l:%c:%m"
+end
 
 -- Quebra de linha AUTOMÁTICA (hard wrap) ao ultrapassar textwidth (100),
 -- restrita a arquivos de TEXTO/PROSA — markdown, mensagens de commit,

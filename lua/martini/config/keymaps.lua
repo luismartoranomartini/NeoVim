@@ -15,7 +15,7 @@
 --   1ª letra depois do <leader> = DOMÍNIO (o quê)
 --   2ª letra                    = VERBO   (a ação dentro do domínio)
 --
---   b → buffers          f → find/arquivos (fzf-lua)
+--   b → buffers          f → find/arquivos (nativo: :find/:grep + LSP)
 --   m → multicursor       g → Go
 --   d → debug             r → run (code_runner)
 --   h → HTTP (kulala)
@@ -50,7 +50,17 @@
 --
 -- 4) gd/K/[d/]d (LSP) ficam FORA dessa gramática de propósito — são
 --    convenção universal do ecossistema Neovim, não nossa (ver
---    plugins/lsp.lua).
+--    plugins/lsp.lua). <leader>fr (rename) e <leader>fu (references)
+--    também vivem em plugins/lsp.lua, dentro do autocmd LspAttach,
+--    não aqui — só existem quando um servidor LSP está conectado.
+--
+-- REMOÇÃO (ago/2026): fzf-lua tirado do projeto. Causava colisão real
+-- de tecla (<leader>fr apontava tanto pra "fzf resume" quanto pro
+-- rename do LSP, dependendo da ordem de carregamento) e nunca chegou
+-- a estar na lista de clone do loader.lua — a chamada require("fzf-lua")
+-- provavelmente já falhava silenciosamente. <leader>ff/<leader>fg agora
+-- usam :find/:grep nativos; <leader>fu usa vim.lsp.buf.references
+-- (quickfix list nativa, sem seletor fuzzy).
 --
 -- RENOMEAÇÕES feitas ao remover maiúsculas (ago/2026):
 --   <leader>bD → <leader>bx   (x = forçar, mesmo verbo de <leader>mx)
@@ -59,7 +69,7 @@
 --   <leader>R* → <leader>h*   (domínio HTTP inteiro, era maiúsculo só
 --                              pra não colidir com <leader>r; ver
 --                              plugins/http.lua)
---   <leader>fR → <leader>fu   (u = "usages"; ver plugins/fzf.lua)
+--   <leader>fR → <leader>fu   (u = "usages"; ver plugins/lsp.lua)
 -- =========================================================
 
 local path     = require("martini.utils.path")
@@ -75,9 +85,17 @@ vim.keymap.set("n", "gf", path.goto_or_create,
   { desc = "Criar/Abrir arquivo sob o cursor (relativo à pasta atual)" })
 
 -- Comando explícito de "novo arquivo", separado do gf (que continua
--- semanticamente "go to file"). Agrupado sob <leader>f porque já é o
--- namespace de operações de arquivo do fzf-lua.
+-- semanticamente "go to file"). Agrupado sob <leader>f = domínio Find.
 vim.keymap.set("n", "<leader>fn", path.new_file, { desc = "Find: novo arquivo (com mkdir -p)" })
+
+-- Buscar arquivo por nome (nativo). Depende de 'path' incluir "**"
+-- (ver config/options.lua) pra buscar recursivamente a partir do cwd.
+vim.keymap.set("n", "<leader>ff", ":find ", { desc = "Find: buscar arquivo por nome" })
+
+-- Buscar texto no projeto (nativo, via grepprg + quickfix). Se
+-- ripgrep estiver instalado e configurado em 'grepprg' (ver
+-- config/options.lua), já ignora .git/node_modules automaticamente.
+vim.keymap.set("n", "<leader>fg", ":grep ", { desc = "Find: buscar texto no projeto (grep + quickfix)" })
 
 -- ── Buffers ───────────────────────────────────────────────
 vim.keymap.set("n", "<leader>bd", ":bd<CR>",  { desc = "Fechar buffer" })
