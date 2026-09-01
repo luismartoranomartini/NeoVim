@@ -18,7 +18,9 @@
 -- =========================================================
 
 pcall(function()
-  require("fzf-lua").setup({
+  local fzf = require("fzf-lua")
+
+  fzf.setup({
     winopts = {
       height  = 0.85,
       width   = 0.85,
@@ -32,6 +34,13 @@ pcall(function()
       cmd = "fd --type f --hidden --exclude .git",
     },
   })
+
+  -- register_ui_select() faz o fzf-lua assumir QUALQUER vim.ui.select do
+  -- Neovim — não só busca de arquivo/grep. Isso troca a lista de texto
+  -- simples que aparecia no seletor de configuração do dap-go (F5), e
+  -- também code actions do LSP com múltiplas opções, pela mesma janela
+  -- flutuante com borda usada no <C-p>/<C-g>.
+  fzf.register_ui_select()
 end)
 
 -- =========================================================
