@@ -9,17 +9,34 @@ if vim.fn.isdirectory(pack_path) == 0 then vim.fn.mkdir(pack_path, "p") end
 
 local primeiro_boot = false
 
-local function carregar_plugin(repo)
+-- Aceita tanto uma string simples ("dono/repo") quanto uma tabela com
+-- branch explícita ({ "dono/repo", branch = "1.0" }) — necessário pro
+-- multicursor.nvim, que precisa da branch "1.0" (não a "main").
+local function carregar_plugin(entrada)
+  local repo, branch
+  if type(entrada) == "table" then
+    repo   = entrada[1]
+    branch = entrada.branch
+  else
+    repo = entrada
+  end
+
   local nome    = repo:match(".*/(.*)")
   local caminho = pack_path .. nome
 
   if vim.fn.isdirectory(caminho .. "/.git") == 0 then
     primeiro_boot = true
-    print("Baixando: " .. nome .. "...")
-    local resultado = vim.fn.system({
-      "git", "clone", "--depth", "1",
-      "https://github.com/" .. repo, caminho,
-    })
+    print("Baixando: " .. nome .. (branch and (" (branch " .. branch .. ")") or "") .. "...")
+
+    local cmd = { "git", "clone", "--depth", "1" }
+    if branch then
+      table.insert(cmd, "--branch")
+      table.insert(cmd, branch)
+    end
+    table.insert(cmd, "https://github.com/" .. repo)
+    table.insert(cmd, caminho)
+
+    local resultado = vim.fn.system(cmd)
     if vim.v.shell_error ~= 0 then
       vim.notify("FALHA: " .. repo .. "\n" .. resultado, vim.log.levels.ERROR)
       return
@@ -36,7 +53,6 @@ local plugins = {
   "folke/tokyonight.nvim",
   "navarasu/onedark.nvim",
   "EdenEast/nightfox.nvim",
-  "folke/tokyonight.nvim",
   "nvim-treesitter/nvim-treesitter",
   "nvim-treesitter/nvim-treesitter-textobjects",
   "hrsh7th/nvim-cmp",
@@ -46,6 +62,8 @@ local plugins = {
   "saadparwaiz1/cmp_luasnip",
   "rafamadriz/friendly-snippets",
   "windwp/nvim-autopairs",
+  "windwp/nvim-ts-autotag",
+  "kylechui/nvim-surround",
   "stevearc/conform.nvim",
   "mfussenegger/nvim-lint",
   "mfussenegger/nvim-dap",
@@ -59,9 +77,11 @@ local plugins = {
   "akinsho/bufferline.nvim",
   "CRAG666/code_runner.nvim",
   "mistweaverco/kulala.nvim",
+  { "jake-stewart/multicursor.nvim", branch = "1.0" },
+  "ibhagwan/fzf-lua",
 }
 
-for _, repo in ipairs(plugins) do carregar_plugin(repo) end
+for _, entrada in ipairs(plugins) do carregar_plugin(entrada) end
 vim.cmd("silent! helptags ALL")
 
 return primeiro_boot

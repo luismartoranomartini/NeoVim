@@ -32,24 +32,29 @@ futura ter um critério claro em vez de "porque sim":
 ```
 init.lua                        bootstrap: require("martini")
 lua/martini/
-├── init.lua                    patch 0.12.2 + loader + ordem de carregamento
+├── init.lua                    patch 0.12.2 + loader + require("martini.config") + require("martini.plugins")
 ├── loader.lua                  clona plugins via git; :MartiniUpdatePlugins
 ├── config/                     REGRA: configura o Neovim, não plugins
+│   ├── init.lua                 agrega os módulos abaixo, nesta ordem
 │   ├── options.lua             vim.opt / vim.g
 │   ├── diagnostics.lua         vim.diagnostic.config
-│   ├── colors.lua              tema (paleta + todos os vim.api.nvim_set_hl)
+│   ├── colors.lua               tema (paleta + todos os vim.api.nvim_set_hl)
 │   ├── keymaps.lua             atalhos globais
 │   └── dashboard.lua           tela inicial
 ├── languages/                  REGRA: tudo específico de UMA linguagem
+│   ├── init.lua
 │   └── go.lua                  templates .tmpl, lint, imports, testes, dap-go
 ├── plugins/                    REGRA: configura plugins, não o Neovim
-│   ├── treesitter.lua, editing.lua, nvim-tree.lua, bufferline.lua
+│   ├── init.lua                 agrega os módulos abaixo, nesta ordem
+│   ├── treesitter.lua, textobjects.lua, editing.lua, nvim-tree.lua, bufferline.lua
 │   ├── completion.lua          nvim-cmp + LuaSnip
 │   ├── lsp.lua                 servidores LSP (API nativa 0.12, sem lspconfig)
 │   ├── format.lua              conform.nvim (genérico)
-│   ├── debug.lua               nvim-dap + dap-ui + python + codelldb
+│   ├── debug.lua               nvim-dap + dap-ui + python + codelldb (lazy)
 │   ├── runner.lua              code_runner.nvim
-│   ├── http.lua, fzf.lua, multicursor.lua
+│   ├── http.lua                kulala.nvim
+│   ├── multicursor.lua         multicursor.nvim
+│   └── finder.lua              fzf-lua (sem <leader> — ver seção Atalhos)
 └── utils/                      helpers compartilhados entre plugins/config
     ├── path.lua                 gf + criação de arquivo (<leader>fn)
     └── terminal.lua              abrir/fechar terminal
@@ -72,7 +77,7 @@ minúscula com mnemônica própria.
 |---|---|
 | `<leader>b` | Buffers |
 | `<leader>d` | Debug |
-| `<leader>f` | Find (fzf-lua) + arquivo |
+| `<leader>f` | Find (`:find`/`:grep` nativos) + arquivo |
 | `<leader>g` | Go |
 | `<leader>h` | HTTP requests (kulala) |
 | `<leader>m` | Multicursor |
@@ -88,7 +93,7 @@ minúscula com mnemônica própria.
 | `<leader>bd` / `<leader>bx` | Fecha buffer / fecha buffer forçado |
 | `gf` | Cria/abre o arquivo sob o cursor (relativo à pasta atual) |
 | `<leader>fn` | Cria arquivo novo via prompt (com `mkdir -p`) |
-| `<leader>fu` | Referências / usages do símbolo (LSP, via fzf-lua) |
+| `<leader>fu` | Referências / usages do símbolo (LSP, quickfix nativa) |
 | `<leader>t` / `<leader>vs` | Terminal horizontal / vertical |
 | `Ctrl-t` | Toggle terminal |
 
@@ -114,33 +119,64 @@ REPL, `<leader>dt` terminar sessão, `<leader>du` toggle dap-ui.
 `hs` enviar requisição · `ha` enviar todas · `hb` scratchpad · `hc` copiar
 como curl · `hn`/`hp` próxima/anterior · `hq` fechar janela de resposta.
 
-### Find (fzf-lua) e Multicursor
+### Find — dois mecanismos coexistindo de propósito
 
-`fR`→`fu` no fzf-lua (referências/usages). No multicursor, três
-maiúsculas passaram batido na primeira rodada e foram corrigidas depois:
-`mA`→`ma`, `mN`→`mp`, `mS`→`msp`. Ver `plugins/fzf.lua` e
+Depois de uma primeira remoção do fzf-lua (ago/2026 — colidia com
+`<leader>fr`, o rename do LSP) e uma reintrodução posterior (set/2026),
+a solução foi separar por completo os dois métodos de busca em
+namespaces diferentes, evitando qualquer colisão:
+
+| Atalho | Motor | Ação |
+|---|---|---|
+| `<leader>ff` | nativo (`:find`) | Buscar arquivo por nome, sem preview |
+| `<leader>fg` | nativo (`:grep` + ripgrep) | Buscar texto no projeto, popula quickfix |
+| `Ctrl-p` | fzf-lua | Buscar arquivo por nome, com preview fuzzy |
+| `Ctrl-g` | fzf-lua | Buscar texto (live grep) no projeto, com preview |
+
+`Ctrl-p`/`Ctrl-g` foram escolhidos por sobrescreverem comportamento nativo
+de baixo valor em modo normal (`Ctrl-p` == `k`; `Ctrl-g` só mostra o nome
+do arquivo atual) — ver `plugins/finder.lua`.
+
+### Multicursor
+
+`<C-Up>`/`<C-Down>` cursor na linha de cima/abaixo · `<leader>ma`
+seleciona todas as ocorrências da palavra sob o cursor · `<leader>mn`/`mp`
+próxima/anterior ocorrência · `<leader>mh`/`ml` navega entre cursores ·
+`<leader>mx` remove cursor · `<leader>mq` ativa/desativa. Ver
 `plugins/multicursor.lua` pra lista completa.
 
 ## Plugins gerenciados por `loader.lua`
 
 Sem lazy.nvim/packer — `git clone --depth 1` direto em
 `~/.local/share/nvim/site/pack/meus_plugins/start/`. `:MartiniUpdatePlugins`
-roda `git pull --ff-only` em todos de uma vez.
+roda `git pull --ff-only` em todos de uma vez. `loader.lua` aceita tanto
+uma string (`"dono/repo"`) quanto uma tabela com branch explícita
+(`{ "dono/repo", branch = "1.0" }`) — necessário pro `multicursor.nvim`,
+que precisa da branch `1.0`, não a `main`.
 
-## ⚠️ Divergência conhecida: este README vs. o código
+## ⚠️ Divergências conhecidas, corrigidas em set/2026
 
-Uma versão anterior deste README (datada de 08/07/2026) descrevia três
-funcionalidades que **não existem** nos arquivos-fonte reais, confirmado
-em 29/08/2026:
+Uma auditoria confirmou três problemas reais entre o que o código exige
+e o que `loader.lua` de fato baixava — todos corrigidos:
 
-1. `<leader>W` / `<leader>WQ` — salvar todos os buffers / salvar e sair
-2. `gf` resolvendo URLs (`http`/`https`) e arquivos `.html`/`.htm` via
-   `vim.fn.jobstart({"xdg-open", alvo}, {detach = true})`
-3. `[d`/`]d` usando `vim.diagnostic.jump` em vez de `goto_prev`/`goto_next`
-   (que são as que o `lsp.lua` real ainda usa)
+1. **`lua/martini/init.lua` pulava `config/diagnostics.lua`.** O bootstrap
+   listava `options`/`colors`/`keymaps`/`dashboard` individualmente em vez
+   de delegar a `config/init.lua` (que já agregava os cinco, incluindo
+   diagnostics). Resultado: `vim.diagnostic.config()` nunca rodava — sinais
+   customizados (E/W/I/H) e o virtual_text estilo Error Lens ficavam sem
+   efeito, mesmo com o arquivo presente e correto. Corrigido trocando para
+   `require("martini.config")`.
+2. **Três plugins usados no código mas ausentes do `loader.lua`:**
+   `multicursor.nvim` (branch `1.0`), `nvim-ts-autotag` e `nvim-surround`.
+   O primeiro falhava com erro visível (`vim.notify` capturado em
+   `multicursor.lua`); os outros dois falhavam em silêncio total — o
+   `pcall` em `editing.lua` engolia o erro sem notificar. Autotag de
+   HTML/JSX e os comandos `ys`/`cs`/`ds` do surround simplesmente não
+   existiam, sem nenhum aviso.
+3. **`"folke/tokyonight.nvim"` duplicado** na lista do `loader.lua` —
+   inofensivo (clone idempotente), mas removido por higiene.
 
-Este README já reflete só o que existe de fato no código pós-reestruração.
-Se você quiser essas três funcionalidades implementadas de verdade (elas
-são melhorias reais — `goto_prev`/`goto_next` estão depreciadas desde o
-Neovim 0.11), é só pedir.
-
+`navarasu/onedark.nvim` e `EdenEast/nightfox.nvim` continuam na lista
+mesmo sem `require()` visível em nenhum arquivo — mantidos por ora, caso
+sejam usados como colorscheme alternativo não documentado; a remoção fica
+pendente de confirmação.
