@@ -32,15 +32,25 @@
 --    convenção tenta manter.
 --
 -- 2) Dentro do domínio "debug", o verbo é literal e direto:
---      db = breakpoint · dc = continue · do = step over ·
---      di = step into  · dk = step out (ver nota abaixo) ·
---      dr = repl · dt = terminate · du = dap-ui
+--      db = breakpoint · dx = limpar TODOS os breakpoints (ver nota
+--      abaixo) · dc = continue · do = step over · di = step into ·
+--      dk = step out (ver nota abaixo) · dr = repl · dt = terminate ·
+--      du = dap-ui
 --
 --    NOTA sobre "dk" (step out): não é "step out" por nenhuma letra
 --    óbvia sem repetir "o" de "over" — "k" foi escolhido por analogia
 --    de movimento (k = pra cima em qualquer motion do Vim, e "sair de
 --    uma função" sobe um nível na pilha de chamadas, i.e., "vai pra
 --    cima"). Documentado aqui porque não é auto-evidente sozinho.
+--
+--    NOTA sobre "dx" (clear all breakpoints, set/2026): "x" segue o
+--    mesmo mnemônico de "forçar/limpar tudo" já usado em <leader>bx
+--    (fechar buffer forçado) e <leader>mx (remover cursor). Diferente
+--    de <leader>db, que alterna SÓ o breakpoint da linha atual, dx
+--    chama dap.clear_breakpoints() e remove todos de uma vez, em
+--    qualquer linha do arquivo — útil depois de várias sessões de
+--    debug em sequência, quando breakpoints de teste ficam esquecidos
+--    espalhados pelo arquivo.
 --
 -- 3) A letra "n" é reaproveitada com dois sentidos DIFERENTES conforme
 --    o domínio — "novo" em <leader>n/<leader>fn, "next/próximo" em
@@ -61,6 +71,13 @@
 -- provavelmente já falhava silenciosamente. <leader>ff/<leader>fg agora
 -- usam :find/:grep nativos; <leader>fu usa vim.lsp.buf.references
 -- (quickfix list nativa, sem seletor fuzzy).
+--
+-- REINTRODUÇÃO (set/2026): fzf-lua voltou, mas em plugins/finder.lua,
+-- com atalhos SEM <leader> (<C-p>/<C-g>) — evita reabrir a mesma
+-- colisão que motivou a remoção anterior. register_ui_select() também
+-- foi ativado ali, então qualquer vim.ui.select do Neovim (incluindo
+-- o seletor de configuração do dap-go ao apertar F5) passa a usar a
+-- janela flutuante do fzf em vez da lista de texto simples.
 --
 -- RENOMEAÇÕES feitas ao remover maiúsculas (ago/2026):
 --   <leader>bD → <leader>bx   (x = forçar, mesmo verbo de <leader>mx)
@@ -128,7 +145,8 @@ vim.keymap.set("n", "<F12>", function() dbg().step_out() end,   { desc = "Debug:
 
 -- Aliases <leader>d* — mesmas ações, para quem prefere não tirar a mão
 -- da home row / não decorar teclas de função.
-vim.keymap.set("n", "<leader>db", function() dbg().toggle_breakpoint() end, { desc = "Debug: breakpoint" })
+vim.keymap.set("n", "<leader>db", function() dbg().toggle_breakpoint() end, { desc = "Debug: breakpoint (linha atual)" })
+vim.keymap.set("n", "<leader>dx", function() dbg().clear_breakpoints() end, { desc = "Debug: limpar TODOS os breakpoints" })
 vim.keymap.set("n", "<leader>dc", function() dbg().continue() end,         { desc = "Debug: continuar / iniciar" })
 vim.keymap.set("n", "<leader>do", function() dbg().step_over() end,        { desc = "Debug: passo sobre" })
 vim.keymap.set("n", "<leader>di", function() dbg().step_into() end,        { desc = "Debug: passo para dentro" })

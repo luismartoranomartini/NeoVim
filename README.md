@@ -33,7 +33,7 @@ futura ter um critério claro em vez de "porque sim":
 init.lua                        bootstrap: require("martini")
 lua/martini/
 ├── init.lua                    patch 0.12.2 + loader + require("martini.config") + require("martini.plugins")
-├── loader.lua                  clona plugins via git; :MartiniUpdatePlugins
+├── loader.lua                  clona plugins via git; aceita { "dono/repo", branch = "x" }
 ├── config/                     REGRA: configura o Neovim, não plugins
 │   ├── init.lua                 agrega os módulos abaixo, nesta ordem
 │   ├── options.lua             vim.opt / vim.g
@@ -54,7 +54,7 @@ lua/martini/
 │   ├── runner.lua              code_runner.nvim
 │   ├── http.lua                kulala.nvim
 │   ├── multicursor.lua         multicursor.nvim
-│   └── finder.lua              fzf-lua (sem <leader> — ver seção Atalhos)
+│   └── finder.lua              fzf-lua (sem <leader>) + register_ui_select()
 └── utils/                      helpers compartilhados entre plugins/config
     ├── path.lua                 gf + criação de arquivo (<leader>fn)
     └── terminal.lua              abrir/fechar terminal
@@ -106,8 +106,16 @@ minúscula com mnemônica própria.
 
 `F5`/`F10`/`F11`/`F12` (convenção universal de debugger) + aliases
 `<leader>dc`/`do`/`di`/`dk`. `dk` = step out (ver nota no `keymaps.lua`
-sobre a escolha da letra). Mais: `<leader>db` breakpoint, `<leader>dr`
-REPL, `<leader>dt` terminar sessão, `<leader>du` toggle dap-ui.
+sobre a escolha da letra). Mais: `<leader>db` alterna breakpoint na linha
+atual · `<leader>dx` limpa **todos** os breakpoints do arquivo de uma vez
+(`dap.clear_breakpoints()`, set/2026 — evita ter que ir linha por linha
+com `db` depois de várias sessões de debug) · `<leader>dr` REPL ·
+`<leader>dt` terminar sessão · `<leader>du` toggle dap-ui.
+
+Ao apertar `F5` sem sessão ativa, o `dap-go` mostra uma lista de
+configurações (Debug, Debug Package, Attach, Debug test...) — desde
+set/2026 essa lista aparece como janela flutuante do fzf-lua, não mais
+como lista de texto simples (ver "Find" abaixo).
 
 ### Go
 
@@ -136,6 +144,12 @@ namespaces diferentes, evitando qualquer colisão:
 `Ctrl-p`/`Ctrl-g` foram escolhidos por sobrescreverem comportamento nativo
 de baixo valor em modo normal (`Ctrl-p` == `k`; `Ctrl-g` só mostra o nome
 do arquivo atual) — ver `plugins/finder.lua`.
+
+`plugins/finder.lua` também chama `fzf.register_ui_select()`, que faz
+**qualquer** `vim.ui.select()` do Neovim usar a janela flutuante do fzf
+em vez do prompt de texto simples nativo. Isso afeta, entre outros: o
+seletor de configuração do `dap-go` (`F5`) e menus de code action do LSP
+com múltiplas opções.
 
 ### Multicursor
 
