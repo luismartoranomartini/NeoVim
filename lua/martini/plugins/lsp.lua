@@ -20,7 +20,14 @@
 -- fzf-lua (removido — colidia com <leader>fr = fzf resume() e não
 -- estava sequer clonado pelo loader.lua). references usa quickfix
 -- list nativa em vez de seletor fuzzy.
+--
+-- augroup com clear=true (set/2026, auditoria externa) — evita
+-- registrar o LspAttach de novo, empilhado, se este arquivo for
+-- recarregado via :luafile durante desenvolvimento da própria config.
+local lsp_group = vim.api.nvim_create_augroup("MartiniLsp", { clear = true })
+
 vim.api.nvim_create_autocmd("LspAttach", {
+  group    = lsp_group,
   callback = function(args)
     local opts = { buffer = args.buf, silent = true }
     vim.keymap.set("n", "gd",         vim.lsp.buf.definition,  opts)

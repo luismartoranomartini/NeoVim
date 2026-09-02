@@ -13,12 +13,19 @@
 --   M.runner_filetypes  → lido por plugins/runner.lua (tbl_extend)
 --   M.setup_debug()     → chamado por plugins/debug.lua dentro do
 --                          setup() lazy do debugger
--- Tudo o resto (filetype.add, highlights, lint, imports, keymaps de
--- teste) roda direto ao dar require() neste módulo — não precisa de
--- chamada explícita.
+-- Tudo o resto (filetype.add, highlights, lint, keymaps de teste) roda
+-- direto ao dar require() neste módulo — não precisa de chamada
+-- explícita.
 -- =========================================================
 
+local terminal = require("martini.utils.terminal")
+
 local M = {}
+
+-- Todos os autocmds deste arquivo ficam neste augroup, com clear=true —
+-- evita listeners duplicados se o módulo for recarregado via :luafile
+-- durante desenvolvimento da própria config (set/2026, auditoria externa).
+local go_group = vim.api.nvim_create_augroup("MartiniGo", { clear = true })
 
 -- =========================================================
 -- Filetype: reconhece arquivos .tmpl/.gohtml (Go HTML templates).
@@ -38,7 +45,8 @@ vim.filetype.add({
 
 -- Garante o filetype mesmo em casos que escapem das regras acima
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = "*.tmpl",
+  group    = go_group,
+  pattern  = "*.tmpl",
   callback = function()
     vim.bo.filetype = "html"
   end,
@@ -82,6 +90,7 @@ local function destacar_verbos_go()
 end
 
 vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter", "WinEnter" }, {
+  group    = go_group,
   callback = destacar_verbos_go,
 })
 
@@ -103,6 +112,7 @@ local function destacar_template_go()
 end
 
 vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter", "WinEnter" }, {
+  group    = go_group,
   callback = destacar_template_go,
 })
 
@@ -133,39 +143,32 @@ pcall(function()
   lint.linters_by_ft.go = { "golangcilint" }
 
   vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+    group    = go_group,
     pattern  = "*.go",
     callback = function() lint.try_lint() end,
   })
 end)
 
 -- =========================================================
--- Format: organiza imports do Go automaticamente ao salvar (remove
--- imports não usados e adiciona os que faltam), via code action do
--- gopls. Isso NÃO é feito pelo lsp_format do conform.nvim (ver
--- plugins/format.lua) nem por um gofmt comum — "organizar imports" é
--- uma code action LSP separada (source.organizeImports) que precisa
--- ser pedida explicitamente. Roda em BufWritePre, síncrono, ANTES do
--- conform formatar/salvar, para que o resultado já saia formatado
--- corretamente.
+-- Format: organiza imports do Go automaticamente ao salvar.
+--
+-- MUDANÇA (set/2026, auditoria externa): antes isso rodava via
+-- vim.lsp.buf_request_sync(..., 1000) num autocmd BufWritePre — uma
+-- requisição SÍNCRONA ao gopls, bloqueando a digitação por até 1s
+-- sempre que o gopls estivesse ocupado reindexando (projetos grandes).
+-- Trocado pelo binário `goimports` como formatter do conform.nvim (ver
+-- plugins/format.lua), que roda em processo externo, assíncrono, sem
+-- travar o :w. Único requisito: `goimports` no PATH — já vem junto do
+-- toolchain padrão do Go (go install golang.org/x/tools/cmd/goimports@latest,
+-- ou já presente se você usou `go install` genérico antes).
+--
+-- Trade-off consciente: goimports NÃO é 100% idêntico à code action
+-- "source.organizeImports" do gopls — ambos removem imports não usados
+-- e adicionam os que faltam, mas o gopls pode aplicar regras extras
+-- específicas de projeto (raro no dia a dia). Se notar diferença de
+-- comportamento, o code action síncrono antigo ainda existe no
+-- histórico do git caso queira reverter.
 -- =========================================================
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern  = "*.go",
-  callback = function()
-    local params = vim.lsp.util.make_range_params()
-    params.context = { only = { "source.organizeImports" } }
-
-    local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 1000)
-    for _, res in pairs(result or {}) do
-      for _, action in pairs(res.result or {}) do
-        if action.edit then
-          vim.lsp.util.apply_workspace_edit(action.edit, "utf-8")
-        elseif action.command then
-          vim.lsp.buf.execute_command(action.command)
-        end
-      end
-    end
-  end,
-})
 
 -- =========================================================
 -- Runner: contribuição pra tabela de filetypes do code_runner.nvim.
@@ -180,23 +183,23 @@ M.runner_filetypes = {
 -- Testes: atalhos sob o prefixo <leader>g (reservado pra Go nesta
 -- reestruturação — ver comentário em config/keymaps.lua).
 --
--- RENOMEADO (ago/2026, duas rodadas):
---   1) <leader>tf → <leader>gr ("go run this test") — pra viver no
---      mesmo namespace de gt/gT em vez de ficar solto fora dele.
---   2) <leader>gT → <leader>ga ("test all") — remoção de maiúsculas
---      dos atalhos <leader>: "a" de "all" substitui o T maiúsculo,
---      mantendo o mesmo sentido de "escopo maior que gt".
+-- MUDANÇA (set/2026): antes cada chamada abria um split novo
+-- (vim.cmd("botright split | resize 15 | terminal ...")), empilhando
+-- splits/buffers de terminal órfãos a cada execução — perceptível em
+-- TDD, quando o teste roda dezenas de vezes seguidas. Agora usa
+-- terminal.run_test(cmd) (utils/terminal.lua), que reaproveita a MESMA
+-- janela a cada chamada em vez de criar uma nova.
 -- =========================================================
 
 -- <leader>gt : testa o pacote do arquivo atual (verbose)
 vim.keymap.set("n", "<leader>gt", function()
   local dir = vim.fn.expand("%:p:h")
-  vim.cmd("botright split | resize 15 | terminal cd " .. vim.fn.fnameescape(dir) .. " && go test -v")
+  terminal.run_test("cd " .. vim.fn.fnameescape(dir) .. " && go test -v")
 end, { desc = "Go: testar pacote atual" })
 
 -- <leader>ga : testa o projeto inteiro ("a" de "all")
 vim.keymap.set("n", "<leader>ga", function()
-  vim.cmd("botright split | resize 15 | terminal go test ./...")
+  terminal.run_test("go test ./...")
 end, { desc = "Go: testar projeto inteiro" })
 
 -- <leader>gr : testa APENAS a função de teste onde o cursor está
@@ -233,7 +236,7 @@ vim.keymap.set("n", "<leader>gr", function()
     vim.fn.fnameescape(dir),
     func_name
   )
-  vim.cmd("botright split | resize 15 | terminal " .. cmd)
+  terminal.run_test(cmd)
 end, { desc = "Go: testar apenas a função de teste sob o cursor" })
 
 -- =========================================================

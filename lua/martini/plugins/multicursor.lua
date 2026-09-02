@@ -68,4 +68,3 @@ end)
 if not ok then
   vim.notify("multicursor.lua ERRO: " .. tostring(erro), vim.log.levels.ERROR)
 end
-
