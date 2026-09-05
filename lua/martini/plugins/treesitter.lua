@@ -1,22 +1,19 @@
 -- =========================================================
 -- lua/martini/plugins/treesitter.lua
--- Extraído de plugins/ui.lua durante a reestruturação (ago/2026).
 -- Highlights específicos de Go (verbos de printf, ações de template)
--- ficaram em languages/go.lua — aqui só o genérico.
--- =========================================================
-
--- Treesitter — API nova (branch "main" do nvim-treesitter).
--- O módulo "nvim-treesitter.configs" foi REMOVIDO na reescrita de 2024;
--- não existe mais ensure_installed/highlight.enable via configs.setup().
--- Agora install() baixa e compila os parsers (idempotente — não reinstala
--- se já presentes), e o highlight é ativado manualmente por buffer via
--- vim.treesitter.start() no autocmd FileType logo abaixo.
+-- ficam em languages/go.lua — aqui só o genérico.
+-- Treesitter — API nova (branch "main" do nvim-treesitter). O módulo
+-- "nvim-treesitter.configs" foi REMOVIDO na reescrita de 2024; não
+-- existe mais ensure_installed/highlight.enable via configs.setup().
+-- install() baixa e compila os parsers (idempotente), e o highlight
+-- é ativado manualmente por buffer via vim.treesitter.start() no
+-- autocmd FileType logo abaixo.
 --
--- NOTA (abr/2026): o repositório nvim-treesitter/nvim-treesitter foi
--- arquivado pelo dono. A branch "main" que usamos aqui continua
--- funcionando normalmente (arquivado ≠ apagado), só não recebe mais
--- atualizações nem parsers novos. Sem ação necessária agora.
-local ts_langs = { "lua", "javascript", "typescript", "go", "python", "html", "css", "c", "yaml" }
+-- LISTA REDUZIDA (set/2026) ao que é realmente usado: Go, JS/TS/TSX
+-- (web), C, HTML/CSS (templates Go + front-end), Lua (edição da
+-- própria config). Removidos: python, yaml.
+-- =========================================================
+local ts_langs = { "lua", "javascript", "typescript", "tsx", "go", "c", "html", "css" }
 
 pcall(function()
   require("nvim-treesitter").install(ts_langs)

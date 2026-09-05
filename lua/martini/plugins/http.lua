@@ -1,10 +1,10 @@
 -- =========================================================
 -- lua/martini/plugins/http.lua
--- HTTP client (kulala.nvim) — tests APIs via .http files
--- Requirements: Neovim 0.12+, curl, git, tree-sitter-cli (already present)
+-- HTTP client (kulala.nvim) — testa APIs via arquivos .http
+-- Requisitos: Neovim 0.12+, curl, git, tree-sitter-cli (já presente)
 -- =========================================================
 
--- Enable the "http" filetype for .http and .rest files
+-- Ativa o filetype "http" para arquivos .http e .rest
 vim.filetype.add({
   extension = {
     http = "http",
@@ -12,8 +12,8 @@ vim.filetype.add({
   },
 })
 
--- PERF: kulala's setup() only runs the first time an .http/.rest buffer
--- is opened or an <leader>h keymap is used, instead of on every boot.
+-- PERF: o setup() do kulala só roda na primeira vez que um buffer
+-- .http/.rest é aberto, ou um atalho <leader>h é usado — não no boot.
 local kulala_ready = false
 
 local function setup_kulala()
@@ -22,72 +22,72 @@ local function setup_kulala()
 
   pcall(function()
     require("kulala").setup({
-      -- Default environment (dev/test/prod defined in http-client.env.json)
+      -- Ambiente padrão (dev/test/prod definidos em http-client.env.json)
       default_env = "dev",
 
       ui = {
-        display_mode    = "split",  -- response in a split window
-        split_direction = "right",  -- opens to the right
-        default_view    = "body",   -- shows the response body first
+        display_mode = "split", -- resposta em um split
+        split_direction = "right", -- abre à direita
+        default_view = "body", -- mostra o corpo da resposta primeiro
       },
 
-      -- JSON response formatting
+      -- Formatação da resposta JSON
       response_format = {
-        indent      = 2,
+        indent = 2,
         expand_tabs = true,
-        sort_keys   = false,
+        sort_keys = false,
       },
 
-      -- Reads environment variables in VSCode's REST Client format,
-      -- keeping compatibility with existing .http files
+      -- Lê variáveis de ambiente no formato do REST Client (VSCode),
+      -- mantendo compatibilidade com arquivos .http existentes
       vscode_rest_client_environmentvars = true,
     })
   end)
 end
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern  = "http",
+  pattern = "http",
   callback = function()
     vim.schedule(setup_kulala)
   end,
 })
 
 -- =========================================================
--- Keymaps (prefix <leader>h for "HTTP" — renamed from <leader>R (ago/2026, uppercase removal))
+-- Atalhos (prefixo <leader>h, domínio HTTP)
 -- =========================================================
 local map = vim.keymap.set
 
 map("n", "<leader>hs", function()
   setup_kulala()
   require("kulala").run()
-end, { desc = "HTTP: send request under cursor" })
+end, { desc = "HTTP: enviar requisição sob o cursor" })
 
 map("n", "<leader>ha", function()
   setup_kulala()
   require("kulala").run_all()
-end, { desc = "HTTP: send all requests in file" })
+end, { desc = "HTTP: enviar todas as requisições do arquivo" })
 
 map("n", "<leader>hb", function()
   setup_kulala()
   require("kulala").scratchpad()
-end, { desc = "HTTP: open scratchpad" })
+end, { desc = "HTTP: abrir scratchpad" })
 
 map("n", "<leader>hc", function()
   setup_kulala()
   require("kulala").copy()
-end, { desc = "HTTP: copy request as curl command" })
+end, { desc = "HTTP: copiar requisição como comando curl" })
 
 map("n", "<leader>hn", function()
   setup_kulala()
   require("kulala").jump_next()
-end, { desc = "HTTP: next request" })
+end, { desc = "HTTP: próxima requisição" })
 
 map("n", "<leader>hp", function()
   setup_kulala()
   require("kulala").jump_prev()
-end, { desc = "HTTP: previous request" })
+end, { desc = "HTTP: requisição anterior" })
 
 map("n", "<leader>hq", function()
   setup_kulala()
   require("kulala").close()
-end, { desc = "HTTP: close response window" })
+end, { desc = "HTTP: fechar janela de resposta" })

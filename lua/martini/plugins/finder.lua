@@ -1,16 +1,11 @@
 -- =========================================================
 -- lua/martini/plugins/finder.lua
--- Busca fuzzy de arquivos e texto via fzf-lua.
--- Requisito: binário `fzf` instalado no sistema.
---
--- SEM <leader> de propósito: <leader>ff/<leader>fg já pertencem ao
--- :find/:grep nativos (ver config/keymaps.lua e config/options.lua),
--- que já resolvem busca simples sem depender de plugin. fzf-lua entra
--- como complemento — preview visual + fuzzy match de verdade — em
--- teclas fora do namespace <leader>, então não reintroduz a colisão
--- que motivou a remoção anterior do fzf-lua (<leader>fr batia com o
--- rename do LSP; ver nota de remoção em keymaps.lua).
---
+-- Busca fuzzy de arquivos e texto via fzf-lua — caminho ÚNICO de
+-- busca (set/2026: os atalhos nativos <leader>ff/<leader>fg foram
+-- removidos de config/keymaps.lua por duplicarem isto aqui).
+-- Requisito: binário fzf instalado no sistema.
+-- SEM <leader> de propósito: <C-p>/<C-g> evitam colisão com
+-- <leader>fr (rename do LSP) e <leader>fn (novo arquivo).
 -- <C-p> e <C-g> escolhidos por serem, nativamente, de baixo valor em
 -- modo normal:
 --   <C-p> == equivalente a 'k' (sobe uma linha) — redundante
@@ -22,10 +17,10 @@ pcall(function()
 
   fzf.setup({
     winopts = {
-      height  = 0.85,
-      width   = 0.85,
+      height = 0.85,
+      width = 0.85,
       preview = {
-        default  = "bat",  -- usa `bat` se disponível; cai para `cat` se não
+        default = "bat", -- usa bat se disponível; cai para cat se não
         vertical = "up:45%",
       },
     },

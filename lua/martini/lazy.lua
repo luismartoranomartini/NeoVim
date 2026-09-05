@@ -4,7 +4,7 @@
 --
 -- POR QUE A TROCA: loader.lua fazia git clone --depth 1 no branch padrão
 -- de cada plugin, sem trava de versão nenhuma — uma config que funciona
--- hoje podia quebrar amanhã com um push de qualquer um dos ~29 plugins,
+-- hoje podia quebrar amanhã com um push de qualquer um dos plugins,
 -- sem lockfile, comando de update ou rollback. lazy.nvim resolve isso
 -- automaticamente: grava lazy-lock.json com o commit exato de cada
 -- plugin após instalar/atualizar. Comitando esse arquivo no repo, toda
@@ -19,11 +19,21 @@
 -- refatorar esses requires em cada plugins/*.lua pra rodar sob demanda
 -- — mudança maior, fora do escopo desta correção. O ganho aqui é
 -- reprodutibilidade automática, não redução de tempo de boot.
+--
+-- ESCOPO REDUZIDO (set/2026): lista trimada a Go, JS/TS (web) e C —
+-- removidos onedark.nvim, nightfox.nvim (nunca usados — só tokyonight
+-- é aplicado em config/colors.lua), nvim-tree.lua, nvim-web-devicons,
+-- bufferline.nvim (não pedidos; <leader>e agora usa :Lexplore nativo)
+-- e nvim-dap-python (Python fora do escopo atual).
+--
+-- ATUALIZAÇÃO AUTOMÁTICA (set/2026): diferente do loader.lua antigo
+-- (git pull cru), aqui usamos a API do próprio lazy.nvim —
+-- require("lazy").update({ show = false }) — pra não violar o
+-- lockfile. Roda em background, sem abrir a UI do lazy.nvim, ~1s
+-- depois do VimEnter (não compete com o startup por I/O de rede).
 -- =========================================================
-
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 local primeiro_boot_lazy = vim.fn.isdirectory(lazypath) == 0
-
 if primeiro_boot_lazy then
   vim.fn.system({
     "git", "clone", "--filter=blob:none",
@@ -34,15 +44,15 @@ if primeiro_boot_lazy then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Mesma lista de plugins do loader.lua antigo, com a MESMA sintaxe
--- { "dono/repo", branch = "x" } já usada lá pro multicursor.nvim —
--- lazy.nvim entende esse formato nativamente.
+-- Mesma sintaxe { "dono/repo", branch = "x" } já usada pro
+-- multicursor.nvim — lazy.nvim entende esse formato nativamente.
 local plugins = {
-  { "folke/tokyonight.nvim",  lazy = false },
-  { "navarasu/onedark.nvim",  lazy = false },
-  { "EdenEast/nightfox.nvim", lazy = false },
-  { "nvim-treesitter/nvim-treesitter",              lazy = false },
-  { "nvim-treesitter/nvim-treesitter-textobjects",  lazy = false },
+  { "folke/tokyonight.nvim", lazy = false },
+  -- Dashboard (opção 2, set/2026): só o módulo dashboard é usado —
+  -- ver plugins/dashboard.lua pro resto desligado de propósito.
+  { "folke/snacks.nvim", priority = 1000, lazy = false },
+  { "nvim-treesitter/nvim-treesitter",             lazy = false },
+  { "nvim-treesitter/nvim-treesitter-textobjects", lazy = false },
   { "hrsh7th/nvim-cmp",         lazy = false },
   { "hrsh7th/cmp-nvim-lsp",     lazy = false },
   { "hrsh7th/cmp-buffer",       lazy = false },
@@ -52,19 +62,15 @@ local plugins = {
   { "windwp/nvim-autopairs",  lazy = false },
   { "windwp/nvim-ts-autotag", lazy = false },
   { "kylechui/nvim-surround", lazy = false },
+  { "mattn/emmet-vim",        lazy = false },
   { "stevearc/conform.nvim",  lazy = false },
   { "mfussenegger/nvim-lint", lazy = false },
   { "mfussenegger/nvim-dap",  lazy = false },
-  { "nvim-neotest/nvim-nio",       lazy = false },
-  { "rcarriga/nvim-dap-ui",        lazy = false },
-  { "mfussenegger/nvim-dap-python", lazy = false },
-  { "leoluz/nvim-dap-go",          lazy = false },
-  { "mattn/emmet-vim", lazy = false },
-  { "nvim-tree/nvim-tree.lua",        lazy = false },
-  { "nvim-tree/nvim-web-devicons",    lazy = false },
-  { "akinsho/bufferline.nvim",        lazy = false },
-  { "CRAG666/code_runner.nvim",       lazy = false },
-  { "mistweaverco/kulala.nvim",       lazy = false },
+  { "nvim-neotest/nvim-nio",  lazy = false },
+  { "rcarriga/nvim-dap-ui",   lazy = false },
+  { "leoluz/nvim-dap-go",     lazy = false },
+  { "CRAG666/code_runner.nvim", lazy = false },
+  { "mistweaverco/kulala.nvim", lazy = false },
   { "jake-stewart/multicursor.nvim", branch = "1.0", lazy = false },
   { "ibhagwan/fzf-lua", lazy = false },
 }
@@ -72,9 +78,6 @@ local plugins = {
 -- Detecta se algum plugin ainda não foi clonado ANTES de chamar setup()
 -- — mesma lógica de "primeiro_boot" que loader.lua tinha, só que agora
 -- delegando a instalação em si pro lazy.nvim (install.missing = true).
--- Preservamos o aviso de restart porque, no primeiro boot, a instalação
--- roda numa janela flutuante própria do lazy.nvim — se plugins/init.lua
--- tentasse dar require() nos plugins ainda sendo baixados, falharia.
 local plugins_root = vim.fn.stdpath("data") .. "/lazy/"
 local faltando = false
 for _, spec in ipairs(plugins) do
@@ -90,12 +93,24 @@ require("lazy").setup(plugins, {
   root = plugins_root,
   lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json",
   install = { missing = true },
-  -- Não notifica sozinho sobre updates disponíveis nem sobre mudanças
-  -- de config detectadas — updates continuam deliberados, via
-  -- :Lazy update rodado manualmente, igual ao :MartiniUpdatePlugins
-  -- de antes (mesmo princípio: "atualizações devem ser deliberadas").
-  checker         = { enabled = false },
+  -- checker fica desligado: quem faz o update é o autocmd abaixo,
+  -- que já roda automaticamente — não precisamos do check+notify
+  -- nativo do lazy.nvim por cima disso (duplicaria o aviso).
+  checker          = { enabled = false },
   change_detection = { notify = false },
+})
+
+-- Atualização automática de verdade: dispara update() sozinho ao
+-- abrir o Neovim, sem abrir a janela do lazy.nvim (show = false) e
+-- sem travar o startup (VimEnter + defer_fn). O lazy-lock.json é
+-- regravado automaticamente pelo próprio lazy.nvim ao final.
+vim.api.nvim_create_autocmd("VimEnter", {
+  once = true,
+  callback = function()
+    vim.defer_fn(function()
+      require("lazy").update({ show = false })
+    end, 1000)
+  end,
 })
 
 return primeiro_boot_lazy or faltando

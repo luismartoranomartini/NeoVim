@@ -7,32 +7,26 @@ local ok, erro = pcall(function()
   mc.setup()
   local map = vim.keymap.set
   -- Adiciona cursor na linha de cima/baixo (funciona em normal e visual)
-  map({ "n", "x" }, "<C-Up>",   function() mc.lineAddCursor(-1) end, { desc = "Multicursor: cursor acima" })
-  map({ "n", "x" }, "<C-Down>", function() mc.lineAddCursor(1)  end, { desc = "Multicursor: cursor abaixo" })
+  map({ "n", "x" }, "<C-Up>", function() mc.lineAddCursor(-1) end, { desc = "Multicursor: cursor acima" })
+  map({ "n", "x" }, "<C-Down>", function() mc.lineAddCursor(1) end, { desc = "Multicursor: cursor abaixo" })
   -- Pula uma linha sem adicionar cursor (util pra saltar blocos)
-  map({ "n", "x" }, "<leader>mj", function() mc.lineSkipCursor(1)  end, { desc = "Multicursor: pular linha abaixo" })
+  map({ "n", "x" }, "<leader>mj", function() mc.lineSkipCursor(1) end, { desc = "Multicursor: pular linha abaixo" })
   map({ "n", "x" }, "<leader>mk", function() mc.lineSkipCursor(-1) end, { desc = "Multicursor: pular linha acima" })
   -- Adiciona cursor na proxima/anterior ocorrencia da palavra sob o cursor
   -- (ou da selecao, em modo visual)
-  -- RENOMEADO (ago/2026, remoção de maiúsculas): mN -> mp ("previous")
-  map({ "n", "x" }, "<leader>mn", function() mc.matchAddCursor(1)  end, { desc = "Multicursor: proxima ocorrencia" })
+  map({ "n", "x" }, "<leader>mn", function() mc.matchAddCursor(1) end, { desc = "Multicursor: proxima ocorrencia" })
   map({ "n", "x" }, "<leader>mp", function() mc.matchAddCursor(-1) end, { desc = "Multicursor: ocorrencia anterior" })
-  map({ "n", "x" }, "<leader>ms", function() mc.matchSkipCursor(1)  end, { desc = "Multicursor: pular proxima ocorrencia" })
-  -- RENOMEADO (ago/2026, remoção de maiúsculas): mS -> msp ("skip previous").
-  -- Três letras aqui em vez de duas: "mp" já está ocupado por "ocorrência
-  -- anterior" (add), então "pular a anterior" (skip) precisa de uma
-  -- combinação própria — msp = ms (skip) + p (previous).
+  map({ "n", "x" }, "<leader>ms", function() mc.matchSkipCursor(1) end, { desc = "Multicursor: pular proxima ocorrencia" })
+  -- "mp" já está ocupado por "ocorrência anterior" (add), então "pular
+  -- a anterior" (skip) precisa de combinação própria: msp = ms + p.
   map({ "n", "x" }, "<leader>msp", function() mc.matchSkipCursor(-1) end, { desc = "Multicursor: pular ocorrencia anterior" })
   -- Adiciona cursor em TODAS as ocorrencias do documento de uma vez
-  -- RENOMEADO (ago/2026, remoção de maiúsculas): mA -> ma ("all",
-  -- mesmo padrão de <leader>ga em languages/go.lua)
   map({ "n", "x" }, "<leader>ma", mc.matchAllAddCursors, { desc = "Multicursor: selecionar todas ocorrencias" })
   -- Alterna qual cursor e o "principal" (util pra revisar edicoes)
   map({ "n", "x" }, "<leader>mh", mc.prevCursor, { desc = "Multicursor: cursor principal anterior" })
   map({ "n", "x" }, "<leader>ml", mc.nextCursor, { desc = "Multicursor: proximo cursor principal" })
   -- Remove o cursor principal atual
   map({ "n", "x" }, "<leader>mx", mc.deleteCursor, { desc = "Multicursor: remover cursor" })
-  -- Mouse: sem mapeamentos (removido deliberadamente — sem uso de mouse)
   -- Ativa/desativa os cursores extras sem apaga-los
   map({ "n", "x" }, "<leader>mq", mc.toggleCursor, { desc = "Multicursor: ativar/desativar cursores" })
   -- Camada de atalhos que so vale enquanto ha multiplos cursores ativos.
@@ -49,22 +43,18 @@ local ok, erro = pcall(function()
     layerSet({ "n", "x" }, "<leader>ml", mc.nextCursor)
     layerSet({ "n", "x" }, "<leader>mx", mc.deleteCursor)
   end)
-  -- Aparencia dos cursores extras — ajustada pra combinar com o tema
-  -- preto/Tokyo Night definido em colors.lua
+  -- Aparencia dos cursores extras — combina com o tema tokyonight
+  -- definido em colors.lua
   local hl = vim.api.nvim_set_hl
-  hl(0, "MultiCursorCursor",         { reverse = true })
-  hl(0, "MultiCursorVisual",         { link = "Visual" })
-  hl(0, "MultiCursorSign",           { link = "SignColumn" })
-  hl(0, "MultiCursorMatchPreview",   { link = "Search" })
+  hl(0, "MultiCursorCursor", { reverse = true })
+  hl(0, "MultiCursorVisual", { link = "Visual" })
+  hl(0, "MultiCursorSign", { link = "SignColumn" })
+  hl(0, "MultiCursorMatchPreview", { link = "Search" })
   hl(0, "MultiCursorDisabledCursor", { reverse = true })
   hl(0, "MultiCursorDisabledVisual", { link = "Visual" })
-  hl(0, "MultiCursorDisabledSign",   { link = "SignColumn" })
+  hl(0, "MultiCursorDisabledSign", { link = "SignColumn" })
 end)
 
--- DIAGNÓSTICO TEMPORÁRIO: antes, o pcall acima engolia qualquer erro
--- em silêncio (era só "pcall(function() ... end)", sem capturar o
--- resultado). Se algo dentro do bloco falhar — setup, algum map(),
--- addKeymapLayer, etc. — este aviso mostra exatamente o quê e onde.
 if not ok then
   vim.notify("multicursor.lua ERRO: " .. tostring(erro), vim.log.levels.ERROR)
 end

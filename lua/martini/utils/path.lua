@@ -1,13 +1,11 @@
 -- =========================================================
 -- lua/martini/utils/path.lua
 -- Resolução e criação de arquivos usadas por config/keymaps.lua.
--- Extraído para cá durante a reestruturação (ago/2026) — antes vivia
--- inline em config/keymaps.lua, dentro do próprio mapeamento gf.
 -- =========================================================
 
 local M = {}
 
--- Resolve `alvo` relativo à PASTA DO ARQUIVO ATUAL (não ao diretório de
+-- Resolve alvo relativo à PASTA DO ARQUIVO ATUAL (não ao diretório de
 -- trabalho do Neovim) quando não for um caminho absoluto — assim um
 -- href="style.css" resolve para o CSS ao lado do HTML atual, não do cwd.
 function M.resolve_relative(alvo)
@@ -16,12 +14,10 @@ function M.resolve_relative(alvo)
   return pasta_atual .. "/" .. alvo
 end
 
--- gf — cria/abre em nova aba o arquivo sob o cursor.
--- Comportamento INALTERADO em relação à versão anterior (a reestruturação
--- só moveu o código de lugar, não a lógica): continua criando o arquivo e
--- os diretórios intermediários automaticamente se ainda não existirem,
--- porque essa é a conveniência real usada no dia a dia (ex.: seguir um
--- href="css/style.css" que ainda não existe já cria o arquivo e a pasta).
+-- gf — cria/abre em nova aba o arquivo sob o cursor. Continua criando
+-- o arquivo e os diretórios intermediários automaticamente se ainda
+-- não existirem (ex.: seguir um href="css/style.css" que ainda não
+-- existe já cria o arquivo e a pasta).
 function M.goto_or_create()
   local alvo = vim.fn.expand("<cfile>")
   if alvo == "" then
@@ -45,12 +41,11 @@ function M.goto_or_create()
   end
 end
 
--- NOVO (ago/2026) — <leader>fn: cria um arquivo novo explicitamente via
--- prompt, sem depender de haver um nome de arquivo sob o cursor. Peça da
--- reestruturação (item 7 da proposta): "gf" continua semanticamente
--- "go to file"; criação avulsa de arquivo ganha seu próprio comando.
--- Resolve caminhos relativos à pasta do arquivo atual, igual ao gf, e
--- também cria diretórios intermediários automaticamente.
+-- <leader>fn: cria um arquivo novo explicitamente via prompt, sem
+-- depender de haver um nome de arquivo sob o cursor. "gf" continua
+-- semanticamente "go to file"; criação avulsa de arquivo tem seu
+-- próprio comando. Resolve caminhos relativos à pasta do arquivo
+-- atual, igual ao gf, e também cria diretórios intermediários.
 function M.new_file()
   vim.ui.input({ prompt = "Novo arquivo: ", completion = "file" }, function(nome)
     if not nome or nome == "" then return end
